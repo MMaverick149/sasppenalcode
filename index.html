@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Policejní Terminál - Perfektní Zarovnání</title>
+    <style>
+        :root {
+            --bg: #0d0d0d;
+            --card: #151515;
+            --accent: #ffcc00;
+            --input-bg: #1a1a1a;
+            --text: #e0e0e0;
+            --text-muted: #888;
+            --border: #222;
+            --danger: #ff4444;
+            --jail: #4dabf7;
+            --fine: #69db7c;
+            --side-padding: 30px; /* Jednotné odsazení pro vše vlevo */
+        }
+
+        body { 
+            background: var(--bg); 
+            color: var(--text); 
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; 
+            margin: 0; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+
+        /* HLAVNÍ OBSAH */
+        .main-content { 
+            flex: 1; 
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-right: 1px solid var(--border); 
+        }
+
+        /* VYHLEDÁVÁNÍ - Sladěno s okraji karet */
+        .search-container {
+            padding: 25px var(--side-padding);
+            background: #0d0d0d;
+        }
+
+        #searchInput {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid #333;
+            color: white;
+            padding: 14px 20px;
+            border-radius: 4px;
+            font-size: 15px;
+            outline: none;
+            border-left: 4px solid var(--accent); /* Žlutá linka vyhledávání */
+            box-sizing: border-box;
+        }
+
+        #searchInput:focus { border-color: #444; }
+
+        /* SEZNAM ZÁKONŮ */
+        .laws-list {
+            flex: 1;
+            padding: 0 var(--side-padding) 30px var(--side-padding);
+            overflow-y: auto;
+        }
+
+        .law-card { 
+            background: var(--card); 
+            border: 1px solid var(--border); 
+            border-radius: 4px; 
+            margin-bottom: 15px; 
+            overflow: hidden;
+        }
+
+        .law-card.hidden { display: none; }
+
+        .law-header {
+            padding: 15px 20px;
+            border-left: 4px solid var(--accent); /* Žlutá linka karty */
+            background: #111;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .law-header:hover { background: #181818; }
+        .law-title { color: var(--accent); font-weight: bold; font-size: 17px; text-transform: uppercase; letter-spacing: 1px; }
+        .law-desc { color: var(--text-muted); font-size: 12px; font-style: italic; margin-top: 4px; }
+
+        .law-content { display: none; background: #0c0c0c; }
+        .law-card.active .law-content { display: block; }
+        
+        .sub-row { display: flex; align-items: center; padding: 12px 20px; border-top: 1px solid #1a1a1a; }
+        .sub-text { flex: 1; font-size: 14px; color: #ccc; }
+
+        /* ŠTÍTKY */
+        .alert-container { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+        .alert-red {
+            color: white;
+            background: var(--danger);
+            padding: 3px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* VSTUPY A TLAČÍTKA */
+        .input-box { 
+            background: #111; 
+            border: 1px solid #333; 
+            color: white; 
+            padding: 8px; 
+            width: 70px; 
+            border-radius: 4px; 
+            text-align: center; 
+            margin-left: 10px;
+            outline: none;
+        }
+        .input-box:focus { border-color: var(--accent); }
+
+        .btn-add { 
+            background: var(--accent); 
+            color: black; 
+            border: none; 
+            width: 34px; 
+            height: 34px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            margin-left: 12px; 
+            transition: 0.2s;
+        }
+        .btn-add:hover { background: #e6b800; transform: scale(1.05); }
+
+        /* SIDEBAR / PROTOKOL */
+        .sidebar { width: 380px; background: #080808; padding: 25px; display: flex; flex-direction: column; }
+        
+        .protocol-title { 
+            color: var(--accent); 
+            text-align: center; 
+            margin: 0 0 20px 0; 
+            letter-spacing: 4px; 
+            text-transform: uppercase;
+            font-size: 24px;
+        }
+
+        .case-entries { flex: 1; overflow-y: auto; }
+        .case-item { 
+            background: #111; 
+            padding: 15px; 
+            border-radius: 4px; 
+            margin-bottom: 12px; 
+            border-left: 3px solid var(--accent); 
+            font-size: 13px; 
+        }
+        
+        /* SOUHRNNÝ BOX DOLE */
+        .summary-box { 
+            background: #0f0f0f; 
+            padding: 20px; 
+            border-radius: 6px; 
+            border: 1px solid #222; 
+            margin-top: 20px;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
+        }
+
+        .summary-alert {
+            display: none; 
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid var(--danger);
+            color: #fff;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; font-size: 15px; text-transform: uppercase; }
+        
+        .btn-reset { 
+            width: 100%; 
+            background: #1a1a1a; 
+            color: var(--danger); 
+            border: 1px solid #333; 
+            padding: 12px; 
+            cursor: pointer; 
+            border-radius: 4px; 
+            font-weight: bold; 
+            margin-top: 10px; 
+            text-transform: uppercase;
+            transition: 0.2s;
+        }
+        .btn-reset:hover { background: #222; border-color: var(--danger); }
+    </style>
+</head>
+<body>
+
+<div class="main-content">
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Vyhledat paragraf nebo trestný čin..." onkeyup="filterLaws()">
+    </div>
+    <div class="laws-list" id="lawsContainer">
+        </div>
+</div>
+
+<div class="sidebar">
+    <h1 class="protocol-title">PROTOKOL</h1>
+    <div class="case-entries" id="caseEntries"></div>
+    
+    <div class="summary-box">
+        <div id="licenseAlert" class="summary-alert">
+            <b style="color:var(--danger)">ODEBRAT Z EVIDENCE:</b><br>
+            <span id="docsList" style="color: #ff8888; font-size: 11px;"></span>
+        </div>
+        <div class="summary-row"><span>VĚZENÍ:</span> <span id="totalJail" style="color: var(--jail);">0 let</span></div>
+        <div class="summary-row"><span>POKUTA:</span> <span id="totalFine" style="color: var(--fine);">0 $</span></div>
+        <button class="btn-reset" onclick="location.reload()">Nový případ</button>
+    </div>
+</div>
+
+<script>
+    let jailTotal = 0, fineTotal = 0;
+    let docsToRevoke = new Set();
+
+    function filterLaws() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const cards = document.querySelectorAll('.law-card');
+        cards.forEach(card => {
+            const text = card.innerText.toLowerCase();
+            card.style.display = text.includes(query) ? "block" : "none";
+        });
+    }
+
+    function formatTextWithAlerts(text) {
+        if (!text.includes("ODEBRAT")) return text;
+        const parts = text.split(/(?=ODEBRAT)/g);
+        let mainText = parts[0];
+        let alertsHtml = '<div class="alert-container">';
+        for (let i = 1; i < parts.length; i++) {
+            alertsHtml += `<span class="alert-red">${parts[i].trim()}</span>`;
+        }
+        alertsHtml += '</div>';
+        return mainText + alertsHtml;
+    }
+
+    async function loadLaws() {
+        const container = document.getElementById('lawsContainer');
+        try {
+            const response = await fetch('tresty.html?v=' + Date.now());
+            const htmlText = await response.text();
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlText;
+            
+            const lawItems = tempDiv.querySelectorAll('.law-item');
+            container.innerHTML = "";
+
+            lawItems.forEach((item, lawIdx) => {
+                const title = item.getAttribute('data-title') || "Paragraf";
+                const descHtml = item.querySelector('.law-description')?.innerHTML || "";
+                const subLines = item.querySelectorAll('.sub-line');
+                
+                let linesHtml = "";
+                subLines.forEach((line, lineIdx) => {
+                    const styledHtml = formatTextWithAlerts(line.innerHTML);
+                    const plainText = line.innerText.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    
+                    linesHtml += `
+                        <div class="sub-row">
+                            <div class="sub-text">${styledHtml}</div>
+                            <input type="number" class="input-box" id="j_${lawIdx}_${lineIdx}" placeholder="Let">
+                            <input type="number" class="input-box" id="f_${lawIdx}_${lineIdx}" placeholder="Pokuta">
+                            <button class="btn-add" onclick="event.stopPropagation(); addToCase('${title.replace(/'/g, "\\'")}', '${plainText}', ${lawIdx}, ${lineIdx})">+</button>
+                        </div>`;
+                });
+
+                const card = document.createElement('div');
+                card.className = 'law-card';
+                card.innerHTML = `
+                    <div class="law-header" onclick="this.parentElement.classList.toggle('active')">
+                        <div style="flex:1"><div class="law-title">${title}</div><div class="law-desc">${descHtml}</div></div>
+                        <div style="color:var(--accent)">▼</div>
+                    </div>
+                    <div class="law-content">${linesHtml}</div>
+                `;
+                container.appendChild(card);
+            });
+        } catch (err) { console.error(err); }
+    }
+
+    function addToCase(title, text, lIdx, rIdx) {
+        const j = parseInt(document.getElementById(`j_${lIdx}_${rIdx}`).value) || 0;
+        const f = parseInt(document.getElementById(`f_${lIdx}_${rIdx}`).value) || 0;
+        if (j === 0 && f === 0) return;
+
+        const matches = text.match(/ODEBRAT\s+([^ODEBRAT<|\n|.]+)/g);
+        let alertHtmlInLog = "";
+        
+        if (matches) {
+            alertHtmlInLog = '<div class="alert-container" style="margin-top:8px;">';
+            matches.forEach(m => {
+                const label = m.trim();
+                docsToRevoke.add(label.replace("ODEBRAT ", ""));
+                alertHtmlInLog += `<span class="alert-red">${label}</span>`;
+            });
+            alertHtmlInLog += '</div>';
+            updateSummaryAlert();
+        }
+
+        const cleanDesc = text.split("ODEBRAT")[0].trim();
+
+        const entry = document.createElement('div');
+        entry.className = 'case-item';
+        entry.innerHTML = `
+            <b style="color:var(--accent);">${title}</b><br>
+            <div style="color:#aaa; margin-top:4px; line-height:1.4;">${cleanDesc}</div>
+            ${alertHtmlInLog}
+            <div style="margin-top:10px; font-weight:bold; border-top:1px solid #222; padding-top:8px; display:flex; justify-content:space-between;">
+                <span style="color:var(--jail)">${j} LET</span>
+                <span style="color:var(--fine)">${f.toLocaleString()} $</span>
+            </div>
+        `;
+        document.getElementById('caseEntries').appendChild(entry);
+        
+        jailTotal += j; fineTotal += f;
+        document.getElementById('totalJail').innerText = jailTotal + " let";
+        document.getElementById('totalFine').innerText = fineTotal.toLocaleString() + " $";
+        
+        document.getElementById(`j_${lIdx}_${rIdx}`).value = "";
+        document.getElementById(`f_${lIdx}_${rIdx}`).value = "";
+    }
+
+    function updateSummaryAlert() {
+        const alertBox = document.getElementById('licenseAlert');
+        const docsSpan = document.getElementById('docsList');
+        if (docsToRevoke.size > 0) {
+            alertBox.style.display = 'block';
+            docsSpan.innerText = Array.from(docsToRevoke).join(", ");
+        }
+    }
+
+    window.onload = loadLaws;
+</script>
+</body>
+</html>
