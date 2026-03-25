@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SASP Penal Code</title>
+    <title>SASP - Penal Code</title>
     <style>
         :root {
             --bg: #0d0d0d;
@@ -47,80 +47,30 @@
 
         .appendix { margin-top: 8px; padding: 8px 12px; background: rgba(255, 204, 0, 0.05); border-left: 2px solid var(--accent); font-size: 12px; color: #bbb; font-style: italic; }
 
+        /* VSTUPNÍ POLE - Odpovídají tvému screenu */
         .input-wrapper { display: flex; flex-direction: column; align-items: center; margin-left: 15px; }
-        .input-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
-        .input-box { background: #111; border: 1px solid #333; color: white; padding: 8px; width: 85px; border-radius: 4px; text-align: center; font-size: 13px; }
+        .input-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; font-weight: bold; }
+        .input-box { background: #111; border: 1px solid #333; color: white; padding: 8px; width: 100px; border-radius: 4px; text-align: center; font-size: 13px; }
+        .input-box::placeholder { color: #555; }
         
         .btn-add { background: var(--accent); color: black; border: none; width: 38px; height: 38px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 15px; align-self: flex-end; }
 
-        /* SIDEBAR */
+        /* SIDEBAR S NOVÝM DESIGNEM */
         .sidebar { width: 380px; background: #080808; padding: 25px; display: flex; flex-direction: column; }
         .protocol-title { color: var(--accent); text-align: center; margin-bottom: 20px; letter-spacing: 4px; text-transform: uppercase; }
         .case-entries { flex: 1; overflow-y: auto; }
         .case-item { background: #111; padding: 15px; border-radius: 4px; margin-bottom: 12px; border-left: 3px solid var(--accent); font-size: 13px; }
 
-        /* --- NOVÝ DESIGN SOUHRNNÉHO BOXU (DLE OBRÁZKU) --- */
-        .summary-box { 
-            background: #111; 
-            padding: 20px; 
-            border-radius: 8px; 
-            border: 1px solid var(--accent); /* Žlutý okraj boxu */
-            margin-top: 20px;
-        }
+        .summary-box { background: #111; padding: 20px; border-radius: 8px; border: 1px solid var(--accent); margin-top: 20px; }
+        .summary-alert-box { display: none; background: rgba(255, 68, 68, 0.15); border: 1px solid var(--danger); border-radius: 6px; padding: 12px; margin-bottom: 15px; text-align: center; }
+        .summary-alert-title { color: var(--danger); font-weight: 900; font-size: 13px; text-transform: uppercase; border-bottom: 1px solid rgba(255, 68, 68, 0.3); padding-bottom: 6px; margin-bottom: 6px; }
+        .summary-alert-list { color: #ffcccc; font-size: 12px; font-weight: bold; }
 
-        .summary-alert-box {
-            display: none;
-            background: rgba(255, 68, 68, 0.15);
-            border: 1px solid var(--danger);
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .summary-alert-title {
-            color: var(--danger);
-            font-weight: 900;
-            font-size: 13px;
-            text-transform: uppercase;
-            border-bottom: 1px solid rgba(255, 68, 68, 0.3);
-            padding-bottom: 6px;
-            margin-bottom: 6px;
-        }
-
-        .summary-alert-list {
-            color: #ffcccc;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .summary-row { 
-            display: flex; 
-            justify-content: space-between; 
-            margin-bottom: 12px; 
-            font-weight: bold; 
-            font-size: 15px; 
-        }
-
-        .label-jail { color: white; text-transform: uppercase; }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-weight: bold; font-size: 15px; }
         .val-jail { color: var(--jail); }
-        .label-fine { color: white; text-transform: uppercase; }
         .val-fine { color: var(--fine); }
 
-        .btn-reset { 
-            width: 100%; 
-            background: #1a1a1a; 
-            color: var(--danger); 
-            border: 1px solid #333; 
-            padding: 14px; 
-            cursor: pointer; 
-            border-radius: 4px; 
-            font-weight: bold; 
-            text-transform: uppercase; 
-            margin-top: 5px;
-            transition: 0.2s;
-        }
-        .btn-reset:hover { background: #222; border-color: var(--danger); }
+        .btn-reset { width: 100%; background: #1a1a1a; color: var(--danger); border: 1px solid #333; padding: 14px; cursor: pointer; border-radius: 4px; font-weight: bold; text-transform: uppercase; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -128,7 +78,7 @@
 <div class="main-content">
     <div class="header-area">
         <div class="main-title">Policejní Databáze - Penal Code - GenK</div>
-        <input type="text" id="searchInput" placeholder="Vyhledat paragraf..." onkeyup="filterLaws()">
+        <input type="text" id="searchInput" placeholder="Vyhledat paragraf nebo trestný čin..." onkeyup="filterLaws()">
     </div>
     <div class="laws-list" id="lawsContainer"></div>
 </div>
@@ -142,15 +92,8 @@
             <div class="summary-alert-title">ODEBRAT Z EVIDENCE:</div>
             <div id="docsList" class="summary-alert-list"></div>
         </div>
-
-        <div class="summary-row">
-            <span class="label-jail">VĚZENÍ:</span> 
-            <span id="totalJail" class="val-jail">0 let</span>
-        </div>
-        <div class="summary-row">
-            <span class="label-fine">POKUTA:</span> 
-            <span id="totalFine" class="val-fine">0 $</span>
-        </div>
+        <div class="summary-row"><span>VĚZENÍ:</span> <span id="totalJail" class="val-jail">0 let</span></div>
+        <div class="summary-row"><span>POKUTA:</span> <span id="totalFine" class="val-fine">0 $</span></div>
         <button class="btn-reset" onclick="location.reload()">NOVÝ PŘÍPAD</button>
     </div>
 </div>
@@ -159,12 +102,24 @@
     let jailTotal = 0, fineTotal = 0;
     let docsToRevoke = new Set();
 
+    // Vylepšená funkce pro formátování placeholderů
     function extractLimits(text, unit) {
+        // Hledá čísla v textu, bere v úvahu tečky v tisících
         const regex = new RegExp(`(\\d+[.\\d]*)\\s*${unit.replace('$', '\\$')}`, 'g');
         const matches = [...text.matchAll(regex)].map(m => m[1]);
-        if (matches.length >= 2) return `${matches[0]}-${matches[1]}`;
-        if (matches.length === 1) return `max ${matches[0]}`;
-        return unit === 'let' ? 'Min-Max' : 'Částka';
+        
+        const suffix = unit === 'let' ? ' let' : ' $';
+
+        if (matches.length >= 2) {
+            // Formát 1-10 let nebo 500 - 5.000 $
+            return `${matches[0]} - ${matches[1]}${suffix}`;
+        }
+        if (matches.length === 1) {
+            // Formát max 5 let nebo max 10.000 $
+            return `max ${matches[0]}${suffix}`;
+        }
+        
+        return unit === 'let' ? 'Let' : 'Pokuta';
     }
 
     function formatTextContent(html) {
@@ -195,11 +150,11 @@
                     <div class="sub-row">
                         <div class="sub-text">${formatTextContent(line.innerHTML)}</div>
                         <div class="input-wrapper">
-                            <span class="input-label">Vězení</span>
+                            <span class="input-label">VĚZENÍ</span>
                             <input type="number" class="input-box" id="j_${lIdx}_${rIdx}" placeholder="${extractLimits(textOnly, 'let')}">
                         </div>
                         <div class="input-wrapper">
-                            <span class="input-label">Pokuta</span>
+                            <span class="input-label">POKUTA</span>
                             <input type="number" class="input-box" id="f_${lIdx}_${rIdx}" placeholder="${extractLimits(textOnly, '$')}">
                         </div>
                         <button class="btn-add" onclick="addToCase('${title}', '${textOnly.replace(/'/g,"")}', ${lIdx}, ${rIdx})">+</button>
