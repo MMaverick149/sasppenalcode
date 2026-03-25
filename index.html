@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Policejní Terminál - Inteligentní Limity</title>
+    <title>Policejní Terminál - Verze s Dodatky</title>
     <style>
         :root {
             --bg: #0d0d0d;
@@ -20,107 +20,60 @@
         }
 
         body { 
-            background: var(--bg); 
-            color: var(--text); 
-            font-family: 'Segoe UI', sans-serif; 
-            display: flex; 
-            margin: 0; 
-            height: 100vh; 
-            overflow: hidden; 
+            background: var(--bg); color: var(--text); 
+            font-family: 'Segoe UI', sans-serif; display: flex; 
+            margin: 0; height: 100vh; overflow: hidden; 
         }
 
-        .main-content { 
-            flex: 1; 
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            border-right: 1px solid var(--border); 
-        }
-
-        .header-area {
-            padding: 30px var(--side-padding) 10px var(--side-padding);
-        }
-
-        .main-title {
-            color: var(--text);
-            font-size: 28px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid var(--accent);
-            display: inline-block;
-        }
-
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid var(--border); }
+        .header-area { padding: 30px var(--side-padding) 10px var(--side-padding); }
+        .main-title { color: var(--text); font-size: 28px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; border-bottom: 2px solid var(--accent); display: inline-block; }
+        
         #searchInput {
-            width: 100%;
-            background: var(--input-bg);
-            border: 1px solid #333;
-            color: white;
-            padding: 14px 20px;
-            border-radius: 4px;
-            font-size: 15px;
-            outline: none;
-            border-left: 4px solid var(--accent);
+            width: 100%; background: var(--input-bg); border: 1px solid #333; color: white;
+            padding: 14px 20px; border-radius: 4px; font-size: 15px; outline: none; border-left: 4px solid var(--accent);
         }
 
-        .laws-list {
-            flex: 1;
-            padding: 15px var(--side-padding) 30px var(--side-padding);
-            overflow-y: auto;
-        }
-
-        .law-card { 
-            background: var(--card); 
-            border: 1px solid var(--border); 
-            border-radius: 4px; 
-            margin-bottom: 15px; 
-            overflow: hidden;
-        }
-
-        .law-header {
-            padding: 15px 20px;
-            border-left: 4px solid var(--accent);
-            background: #111;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
+        .laws-list { flex: 1; padding: 15px var(--side-padding) 30px var(--side-padding); overflow-y: auto; }
+        .law-card { background: var(--card); border: 1px solid var(--border); border-radius: 4px; margin-bottom: 15px; overflow: hidden; }
+        .law-header { padding: 15px 20px; border-left: 4px solid var(--accent); background: #111; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .law-title { color: var(--accent); font-weight: bold; font-size: 17px; text-transform: uppercase; }
+
         .law-content { display: none; background: #0c0c0c; }
         .law-card.active .law-content { display: block; }
         
-        .sub-row { display: flex; align-items: center; padding: 12px 20px; border-top: 1px solid #1a1a1a; }
-        .sub-text { flex: 1; font-size: 14px; color: #ccc; }
+        .sub-row { display: flex; align-items: flex-start; padding: 15px 20px; border-top: 1px solid #1a1a1a; }
+        .sub-text { flex: 1; font-size: 14px; color: #ccc; line-height: 1.5; }
 
-        /* STYLOVÁNÍ VSTUPNÍCH POLÍ S NÁPOVĚDOU */
-        .input-wrapper { display: flex; flex-direction: column; align-items: center; margin-left: 10px; }
-        .input-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px; }
-
-        .input-box { 
-            background: #111; border: 1px solid #333; color: white; 
-            padding: 8px; width: 85px; border-radius: 4px; text-align: center;
-            font-size: 13px;
+        /* STYL PRO DODATEK */
+        .appendix {
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: rgba(255, 204, 0, 0.05);
+            border-left: 2px solid var(--accent);
+            font-size: 12px;
+            color: #bbb;
+            font-style: italic;
         }
-        .input-box::placeholder { color: #555; font-size: 11px; }
+        .appendix b { color: var(--accent); text-transform: uppercase; font-size: 11px; margin-right: 5px; }
 
-        .btn-add { 
-            background: var(--accent); color: black; border: none; width: 38px; height: 38px; 
-            border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 12px; 
-        }
+        /* VSTUPY */
+        .input-wrapper { display: flex; flex-direction: column; align-items: center; margin-left: 15px; }
+        .input-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+        .input-box { background: #111; border: 1px solid #333; color: white; padding: 8px; width: 85px; border-radius: 4px; text-align: center; font-size: 13px; }
+        
+        .btn-add { background: var(--accent); color: black; border: none; width: 38px; height: 38px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 15px; align-self: flex-end; margin-bottom: 2px; }
 
         /* SIDEBAR */
         .sidebar { width: 380px; background: #080808; padding: 25px; display: flex; flex-direction: column; }
         .protocol-title { color: var(--accent); text-align: center; margin-bottom: 20px; letter-spacing: 4px; text-transform: uppercase; }
         .case-entries { flex: 1; overflow-y: auto; }
         .case-item { background: #111; padding: 15px; border-radius: 4px; margin-bottom: 12px; border-left: 3px solid var(--accent); font-size: 13px; }
-        
         .summary-box { background: #0f0f0f; padding: 20px; border-radius: 6px; border: 1px solid #222; margin-top: 20px; }
         .summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; }
         .btn-reset { width: 100%; background: #1a1a1a; color: var(--danger); border: 1px solid #333; padding: 12px; cursor: pointer; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
 
+        /* ŠTÍTKY ODEBRAT */
         .alert-container { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
         .alert-red { color: white; background: var(--danger); padding: 3px 10px; border-radius: 3px; font-weight: bold; text-transform: uppercase; font-size: 10px; }
     </style>
@@ -140,7 +93,7 @@
     <div class="case-entries" id="caseEntries"></div>
     <div class="summary-box">
         <div id="licenseAlert" style="display:none; margin-bottom:15px; text-align:center; border:1px solid var(--danger); padding:10px;">
-            <b style="color:var(--danger)">ODEBRAT:</b><br><span id="docsList" style="font-size:11px;"></span>
+            <b style="color:var(--danger)">ODEBRAT Z EVIDENCE:</b><br><span id="docsList" style="font-size:11px;"></span>
         </div>
         <div class="summary-row"><span>VĚZENÍ:</span> <span id="totalJail" style="color: var(--jail);">0 let</span></div>
         <div class="summary-row"><span>POKUTA:</span> <span id="totalFine" style="color: var(--fine);">0 $</span></div>
@@ -152,13 +105,27 @@
     let jailTotal = 0, fineTotal = 0;
     let docsToRevoke = new Set();
 
-    // Funkce, která vytáhne min/max z textu (např. "500 $ do 2.000 $")
     function extractLimits(text, unit) {
         const regex = new RegExp(`(\\d+[.\\d]*)\\s*${unit.replace('$', '\\$')}`, 'g');
         const matches = [...text.matchAll(regex)].map(m => m[1]);
         if (matches.length >= 2) return `${matches[0]}-${matches[1]}`;
         if (matches.length === 1) return `max ${matches[0]}`;
-        return unit === 'let' ? 'Let' : 'Pokuta';
+        return unit === 'let' ? 'Min-Max' : 'Částka';
+    }
+
+    // Funkce, která zpracuje text a vytvoří vizuální Dodatek a Štítky
+    function formatTextContent(html) {
+        let cleanHtml = html;
+        
+        // 1. Zpracování Dodatku (Hledá text "Dodatek: ...")
+        if (cleanHtml.includes("Dodatek:")) {
+            cleanHtml = cleanHtml.replace(/Dodatek:\s*([^<]+)/g, '<div class="appendix"><b>Dodatek:</b> $1</div>');
+        }
+
+        // 2. Zpracování štítků ODEBRAT
+        cleanHtml = cleanHtml.replace(/ODEBRAT\s+([^<|/]+)/g, '<span class="alert-red">ODEBRAT $1</span>');
+        
+        return cleanHtml;
     }
 
     async function loadLaws() {
@@ -175,13 +142,14 @@
             let rows = "";
 
             subLines.forEach((line, rIdx) => {
-                const text = line.innerText;
-                const jailPlaceholder = extractLimits(text, 'let');
-                const finePlaceholder = extractLimits(text, '$');
+                const rawContent = line.innerHTML;
+                const textOnly = line.innerText;
+                const jailPlaceholder = extractLimits(textOnly, 'let');
+                const finePlaceholder = extractLimits(textOnly, '$');
 
                 rows += `
                     <div class="sub-row">
-                        <div class="sub-text">${formatTextWithAlerts(line.innerHTML)}</div>
+                        <div class="sub-text">${formatTextContent(rawContent)}</div>
                         <div class="input-wrapper">
                             <span class="input-label">Vězení</span>
                             <input type="number" class="input-box" id="j_${lIdx}_${rIdx}" placeholder="${jailPlaceholder}">
@@ -190,7 +158,7 @@
                             <span class="input-label">Pokuta</span>
                             <input type="number" class="input-box" id="f_${lIdx}_${rIdx}" placeholder="${finePlaceholder}">
                         </div>
-                        <button class="btn-add" onclick="addToCase('${title}', '${text.replace(/'/g,"")}', ${lIdx}, ${rIdx})">+</button>
+                        <button class="btn-add" onclick="addToCase('${title}', '${textOnly.replace(/'/g,"")}', ${lIdx}, ${rIdx})">+</button>
                     </div>`;
             });
 
@@ -208,10 +176,20 @@
         const f = parseInt(document.getElementById(`f_${lIdx}_${rIdx}`).value) || 0;
         if (j === 0 && f === 0) return;
 
+        // Evidence odebrání pro souhrn
+        const matches = text.match(/ODEBRAT\s+([^.]+)/g);
+        if (matches) {
+            matches.forEach(m => docsToRevoke.add(m.replace("ODEBRAT ", "").trim()));
+            updateSummaryAlert();
+        }
+
         const entry = document.createElement('div');
         entry.className = 'case-item';
-        entry.innerHTML = `<b>${title}</b><br>${text.split('ODEBRAT')[0]}
-            <div style="margin-top:10px; display:flex; justify-content:space-between; font-weight:bold;">
+        // Odstraníme Dodatek a Odebrat z textu v protokolu pro čistotu
+        const cleanText = text.split("Dodatek:")[0].split("ODEBRAT")[0].trim();
+        
+        entry.innerHTML = `<b>${title}</b><br>${cleanText}
+            <div style="margin-top:10px; display:flex; justify-content:space-between; font-weight:bold; border-top:1px solid #222; padding-top:5px;">
                 <span style="color:var(--jail)">${j} LET</span><span style="color:var(--fine)">${f.toLocaleString()} $</span>
             </div>`;
         document.getElementById('caseEntries').appendChild(entry);
@@ -221,8 +199,13 @@
         document.getElementById('totalFine').innerText = fineTotal.toLocaleString() + " $";
     }
 
-    function formatTextWithAlerts(text) {
-        return text.replace(/ODEBRAT\s+([^<]+)/g, '<span class="alert-red">ODEBRAT $1</span>');
+    function updateSummaryAlert() {
+        const alertBox = document.getElementById('licenseAlert');
+        const docsSpan = document.getElementById('docsList');
+        if (docsToRevoke.size > 0) {
+            alertBox.style.display = 'block';
+            docsSpan.innerText = Array.from(docsToRevoke).join(", ");
+        }
     }
 
     function filterLaws() {
