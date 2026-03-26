@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SASP - Penal Code</title>
+    <title>SASP Penal Code</title>
     <style>
         :root {
             --bg: #0d0d0d; --card: #151515; --accent: #ffcc00;
@@ -28,15 +28,24 @@
         .row-main { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 15px; }
         .sub-text { flex: 1; font-size: 13px; color: #ccc; line-height: 1.4; }
 
+<<<<<<< HEAD
         .input-group { display: flex; gap: 10px; align-items: flex-end; flex-shrink: 0; }
         .input-wrapper { display: flex; flex-direction: column; align-items: center; }
         .input-label { font-size: 8px; color: #666; text-transform: uppercase; margin-bottom: 4px; font-weight: bold; }
         .input-box { background: #111; border: 1px solid #333; color: white; padding: 7px; width: 75px; border-radius: 4px; text-align: center; font-size: 12px; }
+=======
+        .appendix { margin-top: 8px; padding: 8px 12px; background: rgba(255, 204, 0, 0.05); border-left: 2px solid var(--accent); font-size: 12px; color: #bbb; font-style: italic; }
+
+        .input-wrapper { display: flex; flex-direction: column; align-items: center; margin-left: 15px; }
+        .input-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+        .input-box { background: #111; border: 1px solid #333; color: white; padding: 8px; width: 85px; border-radius: 4px; text-align: center; font-size: 13px; }
+>>>>>>> parent of df9fd2f (NEw)
         
         /* Vzhled zamknutého pole */
         .input-box[readonly] { border-color: #2b4d2e; color: var(--fine); background: #0f1a10; cursor: not-allowed; font-weight: bold; }
         .input-box:focus:not([readonly]) { border-color: var(--accent); outline: none; }
 
+<<<<<<< HEAD
         .btn-add { background: var(--accent); color: black; border: none; width: 35px; height: 35px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 20px; }
 
         /* ČERVENÁ LIŠTA V SEZNAMU */
@@ -48,6 +57,11 @@
 
         /* PROTOKOL (SIDEBAR) */
         .sidebar { width: 360px; background: #080808; padding: 20px; display: flex; flex-direction: column; border-left: 1px solid var(--border); }
+=======
+        /* SIDEBAR */
+        .sidebar { width: 380px; background: #080808; padding: 25px; display: flex; flex-direction: column; }
+        .protocol-title { color: var(--accent); text-align: center; margin-bottom: 20px; letter-spacing: 4px; text-transform: uppercase; }
+>>>>>>> parent of df9fd2f (NEw)
         .case-entries { flex: 1; overflow-y: auto; }
         .case-item { 
             position: relative; background: #111; padding: 15px; border-radius: 8px; 
@@ -56,6 +70,7 @@
         }
         @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 
+<<<<<<< HEAD
         .btn-remove { position: absolute; top: 10px; right: 10px; background: transparent; color: #555; border: none; cursor: pointer; font-size: 22px; line-height: 1; }
         .btn-remove:hover { color: var(--danger); }
         
@@ -66,14 +81,83 @@
         /* SOUHRN DOLE */
         .summary-box { background: #111; padding: 20px; border-radius: 8px; border: 1px solid var(--accent); margin-top: 20px; }
         .final-alert { background: rgba(255, 68, 68, 0.15); border: 1px solid var(--danger); border-radius: 6px; padding: 12px; margin-bottom: 15px; text-align: center; }
+=======
+        /* --- NOVÝ DESIGN SOUHRNNÉHO BOXU (DLE OBRÁZKU) --- */
+        .summary-box { 
+            background: #111; 
+            padding: 20px; 
+            border-radius: 8px; 
+            border: 1px solid var(--accent); /* Žlutý okraj boxu */
+            margin-top: 20px;
+        }
+
+        .summary-alert-box {
+            display: none;
+            background: rgba(255, 68, 68, 0.15);
+            border: 1px solid var(--danger);
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .summary-alert-title {
+            color: var(--danger);
+            font-weight: 900;
+            font-size: 13px;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(255, 68, 68, 0.3);
+            padding-bottom: 6px;
+            margin-bottom: 6px;
+        }
+
+        .summary-alert-list {
+            color: #ffcccc;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .summary-row { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 12px; 
+            font-weight: bold; 
+            font-size: 15px; 
+        }
+
+        .label-jail { color: white; text-transform: uppercase; }
+        .val-jail { color: var(--jail); }
+        .label-fine { color: white; text-transform: uppercase; }
+        .val-fine { color: var(--fine); }
+
+        .btn-reset { 
+            width: 100%; 
+            background: #1a1a1a; 
+            color: var(--danger); 
+            border: 1px solid #333; 
+            padding: 14px; 
+            cursor: pointer; 
+            border-radius: 4px; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            margin-top: 5px;
+            transition: 0.2s;
+        }
+        .btn-reset:hover { background: #222; border-color: var(--danger); }
+>>>>>>> parent of df9fd2f (NEw)
     </style>
 </head>
 <body>
 
 <div class="main-content">
     <div class="header-area">
+<<<<<<< HEAD
         <h2 style="margin:0 0 15px 0; letter-spacing:2px; font-size: 20px;">POLICEJNÍ DATABÁZE - PENAL CODE - GenK</h2>
         <input type="text" id="searchInput" placeholder="Vyhledat v paragrafech..." onkeyup="filterLaws()">
+=======
+        <div class="main-title">Policejní Databáze - Penal Code - GenK</div>
+        <input type="text" id="searchInput" placeholder="Vyhledat paragraf..." onkeyup="filterLaws()">
+>>>>>>> parent of df9fd2f (NEw)
     </div>
     <div class="laws-list" id="lawsContainer"></div>
 </div>
@@ -86,6 +170,7 @@
             <div style="color:var(--danger); font-weight:900; font-size:12px; margin-bottom:5px; border-bottom: 1px solid rgba(255,68,68,0.2); padding-bottom:3px;">ODEBRAT Z EVIDENCE:</div>
             <div id="docsList" style="color:#ffcccc; font-size:11px; font-weight:bold;"></div>
         </div>
+<<<<<<< HEAD
         <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-weight:bold;">
             <span>VĚZENÍ:</span> <span id="totalJail" style="color:var(--jail)">0 let</span>
         </div>
@@ -93,12 +178,25 @@
             <span>POKUTA:</span> <span id="totalFine" style="color:var(--fine)">0 $</span>
         </div>
         <button style="width:100%; padding:14px; background:#1a1a1a; color:var(--danger); border:1px solid #333; cursor:pointer; font-weight:bold; text-transform:uppercase;" onclick="location.reload()">Smazat případ</button>
+=======
+
+        <div class="summary-row">
+            <span class="label-jail">VĚZENÍ:</span> 
+            <span id="totalJail" class="val-jail">0 let</span>
+        </div>
+        <div class="summary-row">
+            <span class="label-fine">POKUTA:</span> 
+            <span id="totalFine" class="val-fine">0 $</span>
+        </div>
+        <button class="btn-reset" onclick="location.reload()">NOVÝ PŘÍPAD</button>
+>>>>>>> parent of df9fd2f (NEw)
     </div>
 </div>
 
 <script>
     let activeCaseItems = [];
 
+<<<<<<< HEAD
     // Funkce pro analýzu textu z tresty.html
     function analyzeLimits(text, unit) {
         // Vyčistíme text od teček JEN pro potřeby hledání čísel (zabrání rozbití logiky u 1.000$)
@@ -119,6 +217,23 @@
             return { type: 'fixed', placeholder: '', value: matches[0] };
         }
         return { type: 'empty', placeholder: unit === 'let' ? 'Let' : 'Pokuta', value: '' };
+=======
+    function extractLimits(text, unit) {
+        const regex = new RegExp(`(\\d+[.\\d]*)\\s*${unit.replace('$', '\\$')}`, 'g');
+        const matches = [...text.matchAll(regex)].map(m => m[1]);
+        if (matches.length >= 2) return `${matches[0]}-${matches[1]}`;
+        if (matches.length === 1) return `max ${matches[0]}`;
+        return unit === 'let' ? 'Min-Max' : 'Částka';
+    }
+
+    function formatTextContent(html) {
+        let cleanHtml = html;
+        if (cleanHtml.includes("Dodatek:")) {
+            cleanHtml = cleanHtml.replace(/Dodatek:\s*([^<]+)/g, '<div class="appendix"><b>Dodatek:</b> $1</div>');
+        }
+        cleanHtml = cleanHtml.replace(/ODEBRAT\s+([^<|/]+)/g, '<span style="color:var(--danger); font-weight:bold; font-size:10px; background:rgba(255,68,68,0.1); padding:2px 5px; border-radius:3px; margin-right:5px; text-transform:uppercase;">ODEBRAT $1</span>');
+        return cleanHtml;
+>>>>>>> parent of df9fd2f (NEw)
     }
 
     async function loadLaws() {
@@ -148,6 +263,7 @@
 
                 rows += `
                     <div class="sub-row">
+<<<<<<< HEAD
                         <div class="row-main">
                             <div class="sub-text">${cleanText}</div>
                             <div class="input-group">
@@ -163,6 +279,18 @@
                             </div>
                         </div>
                         ${alertHtml}
+=======
+                        <div class="sub-text">${formatTextContent(line.innerHTML)}</div>
+                        <div class="input-wrapper">
+                            <span class="input-label">Vězení</span>
+                            <input type="number" class="input-box" id="j_${lIdx}_${rIdx}" placeholder="${extractLimits(textOnly, 'let')}">
+                        </div>
+                        <div class="input-wrapper">
+                            <span class="input-label">Pokuta</span>
+                            <input type="number" class="input-box" id="f_${lIdx}_${rIdx}" placeholder="${extractLimits(textOnly, '$')}">
+                        </div>
+                        <button class="btn-add" onclick="addToCase('${title}', '${textOnly.replace(/'/g,"")}', ${lIdx}, ${rIdx})">+</button>
+>>>>>>> parent of df9fd2f (NEw)
                     </div>`;
             });
 
