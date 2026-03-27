@@ -11,35 +11,62 @@
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* ZLATÝ TUČNÝ TEXT */
+        b, strong { color: var(--accent); }
+
         .main-content { flex: 1; display: flex; flex-direction: column; border-right: 1px solid var(--border); }
         .header-area { padding: 15px 25px; border-bottom: 1px solid var(--border); }
         #searchInput { width: 100%; background: var(--input-bg); border: 1px solid #333; color: white; padding: 10px; border-radius: 4px; outline: none; border-left: 3px solid var(--accent); }
+
         .laws-list { flex: 1; padding: 15px 25px; overflow-y: auto; }
         .law-card { background: var(--card); border: 1px solid var(--border); margin-bottom: 8px; border-radius: 4px; }
         .law-header { padding: 10px 15px; border-left: 3px solid var(--accent); cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #111; }
         .law-title { color: var(--accent); font-weight: bold; text-transform: uppercase; font-size: 13px; }
+        
         .law-content { display: none; background: #0c0c0c; }
         .law-card.active .law-content { display: block; }
+        
+        .law-description { 
+            padding: 12px 15px; 
+            font-size: 11px; 
+            color: #888; 
+            font-style: italic; 
+            border-bottom: 1px solid #1a1a1a;
+            background: #0f0f0f;
+        }
+
         .sub-row { padding: 10px 15px; border-top: 1px solid #1a1a1a; }
         .row-main { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; width: 100%; }
         .sub-text { flex: 1; font-size: 12px; color: #ccc; line-height: 1.4; }
-        .input-group { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
-        .input-box { background: #111; border: 1px solid #333; color: white; padding: 5px; width: 75px; border-radius: 3px; text-align: center; font-size: 11px; outline: none; }
         
-        /* ZAMKNUTÉ POLE */
+        .input-group { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+        
+        /* ROZŠÍŘENÉ TABULKY / INPUTY */
+        .input-box { 
+            background: #111; 
+            border: 1px solid #333; 
+            color: white; 
+            padding: 8px; 
+            width: 100px; /* Zvětšeno z 75px */
+            border-radius: 3px; 
+            text-align: center; 
+            font-size: 12px; 
+            outline: none; 
+        }
+        
         .input-box[readonly] { 
             background: #0a110a !important; 
             border-color: #1b3d20 !important; 
             color: #69db7c !important; 
             cursor: not-allowed; 
-            font-weight: bold;
+            font-weight: bold; 
         }
 
-        .btn-add { background: var(--accent); color: black; border: none; width: 30px; height: 30px; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 18px; }
+        .btn-add { background: var(--accent); color: black; border: none; width: 35px; height: 35px; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 20px; }
         .red-alert-bar { display: inline-block; background: var(--danger); color: white; font-weight: 900; font-size: 9px; padding: 2px 8px; margin-top: 8px; text-transform: uppercase; border-radius: 2px; }
 
-        /* SIDEBAR */
-        .sidebar { width: 360px; background: #080808; padding: 20px; display: flex; flex-direction: column; }
+        .sidebar { width: 380px; background: #080808; padding: 20px; display: flex; flex-direction: column; }
         .sidebar-title { color: var(--accent); text-align: center; font-size: 16px; letter-spacing: 3px; margin-bottom: 20px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #222; padding-bottom: 10px; }
         .case-entries { flex: 1; overflow-y: auto; }
         .case-item { position: relative; background: #111; padding: 12px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #222; }
@@ -48,8 +75,9 @@
         .item-desc { color: #888; font-size: 10px; line-height: 1.3; display: block; margin-bottom: 8px; }
         .item-alert { background: var(--danger); color: white; text-align: center; font-weight: 800; font-size: 9px; padding: 3px; border-radius: 3px; margin-bottom: 8px; text-transform: uppercase; }
         .item-vals { font-weight: bold; font-size: 11px; border-top: 1px solid #222; padding-top: 8px; display: flex; justify-content: space-between; }
+        
         .summary-box { background: #111; padding: 15px; border-radius: 6px; border: 1px solid var(--accent); margin-top: 15px; }
-        .summary-row { display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; margin-bottom: 8px; }
+        .summary-row { display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; margin-bottom: 8px; }
     </style>
 </head>
 <body>
@@ -75,7 +103,6 @@
 <script>
     let activeCaseItems = [];
 
-    // Tato funkce slouží už jen pro tvorbu placeholderů (napovědět rozmezí), pokud není políčko zamknuté ručně
     function getPlaceholder(text, unit) {
         let cleanText = text.replace(/<[^>]*>?/gm, '').replace(/(\d)\.(\d{3})/g, '$1$2');
         let regex = new RegExp(`(\\d+)\\s*(${unit === 'let' ? 'let|roků' : '\\$'})`, 'gi');
@@ -94,13 +121,13 @@
         
         temp.querySelectorAll('.law-item').forEach((item, lIdx) => {
             const title = item.getAttribute('data-title');
+            const descTag = item.querySelector('.law-description');
+            const descriptionHtml = descTag ? `<div class="law-description">${descTag.innerHTML}</div>` : "";
+            
             let rows = "";
             item.querySelectorAll('.sub-line').forEach((line, rIdx) => {
-                
-                // --- RUČNÍ ZAMYKÁNÍ ---
                 const fixFine = line.getAttribute('data-fix-fine');
                 const fixJail = line.getAttribute('data-fix-jail');
-                
                 const txt = line.innerText;
                 const fPlace = fixFine ? "" : getPlaceholder(line.innerHTML, '$');
                 const jPlace = fixJail ? "" : getPlaceholder(line.innerHTML, 'let');
@@ -114,25 +141,35 @@
                         <div class="sub-text">${cleanText}</div>
                         <div class="input-group">
                             <input type="number" class="input-box" id="j_${lIdx}_${rIdx}" 
-                                value="${fixJail || ''}" placeholder="${jPlace}" ${fixJail ? 'readonly' : ''}>
+                                value="${fixJail !== null ? fixJail : ''}" placeholder="${jPlace}" ${fixJail !== null ? 'readonly' : ''}>
                             <input type="number" class="input-box" id="f_${lIdx}_${rIdx}" 
-                                value="${fixFine || ''}" placeholder="${fPlace}" ${fixFine ? 'readonly' : ''}>
+                                value="${fixFine !== null ? fixFine : ''}" placeholder="${fPlace}" ${fixFine !== null ? 'readonly' : ''}>
                             <button class="btn-add" onclick="addToCase('${title}', '${txt.replace(/'/g,"\\'")}', ${lIdx}, ${rIdx})">+</button>
                         </div>
                     </div>
                     ${alerts ? alerts.map(a => `<div class="red-alert-bar">${a}</div>`).join("") : ""}
                 </div>`;
             });
+
             const card = document.createElement('div');
             card.className = 'law-card';
-            card.innerHTML = `<div class="law-header" onclick="this.parentElement.classList.toggle('active')"><div class="law-title">${title}</div></div><div class="law-content">${rows}</div>`;
+            card.innerHTML = `
+                <div class="law-header" onclick="this.parentElement.classList.toggle('active')">
+                    <div class="law-title">${title}</div>
+                </div>
+                <div class="law-content">
+                    ${descriptionHtml}
+                    ${rows}
+                </div>`;
             container.appendChild(card);
         });
     }
 
     function addToCase(title, fullText, lIdx, rIdx) {
-        const j = parseInt(document.getElementById(`j_${lIdx}_${rIdx}`).value) || 0;
-        const f = parseInt(document.getElementById(`f_${lIdx}_${rIdx}`).value) || 0;
+        const jVal = document.getElementById(`j_${lIdx}_${rIdx}`).value;
+        const fVal = document.getElementById(`f_${lIdx}_${rIdx}`).value;
+        const j = parseInt(jVal) || 0;
+        const f = parseInt(fVal) || 0;
         if (j === 0 && f === 0) return;
         const docs = [];
         if (fullText.toUpperCase().includes("ŘIDIČ")) docs.push("ŘIDIČSKÝ PRŮKAZ");
