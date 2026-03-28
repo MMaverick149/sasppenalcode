@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP - Penal Code Systém</title>
+    <title>SASP - MDT Terminal v66</title>
     <style>
         :root {
             --bg-main: #0a0b0d;
@@ -16,7 +16,6 @@
 
         body { background: var(--bg-main); color: #ffffff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        /* LOGIN */
         #loginOverlay { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('https://r2.fivemanage.com/L1FYmIx7KR3NO3g9xlt6b/pd.png'); 
@@ -31,7 +30,6 @@
         .header-bar { padding: 20px 30px; border-bottom: 1px solid var(--border); background: var(--bg-panel); }
         #lawsContainer { padding: 20px; overflow-y: auto; flex-grow: 1; background: #0c0d0f; }
 
-        /* KARTY ZÁKONŮ */
         .law-card { background: var(--bg-panel); border: 1px solid var(--border); margin-bottom: 12px; border-radius: 8px; overflow: hidden; }
         .law-header { padding: 15px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: var(--accent); text-transform: uppercase; }
         .law-content { display: none; padding: 15px 20px; border-top: 1px solid var(--border); background: #111317; }
@@ -41,25 +39,23 @@
         .input-jail { border-color: var(--jail-color); }
         .input-fine { border-color: var(--fine-color); }
 
-        /* PROTOKOL */
         .protocol-item { background: #000; padding: 15px; border-radius: 8px; border-left: 4px solid var(--jail-color); margin-bottom: 15px; position: relative; }
         .protocol-edit-input { background: transparent; border: none; border-bottom: 1px solid #333; color: inherit; width: 70px; text-align: center; font-weight: 900; font-size: 16px; outline: none; }
         
+        /* ODEBRAT V ČERVENÉM */
         .license-tag-red { 
-            background: var(--danger); color: #fff; padding: 4px 10px; border-radius: 4px; 
-            font-size: 11px; font-weight: 900; text-transform: uppercase; margin-top: 8px; display: inline-block;
-            animation: pulse 2s infinite;
+            background: var(--danger); color: #fff; padding: 6px 12px; border-radius: 4px; 
+            font-size: 11px; font-weight: 900; text-transform: uppercase; margin-top: 10px; display: block;
+            text-align: center; border: 1px solid rgba(255,255,255,0.2);
         }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 
-        /* HISTORIE MODAL */
         #historyModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 6000; justify-content: center; align-items: center; }
         .modal-content { background: var(--bg-panel); width: 600px; max-height: 80vh; border-radius: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; }
         .modal-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
         #historyList { padding: 20px; overflow-y: auto; flex-grow: 1; }
 
         .summary-box { padding: 25px; background: #000; border-top: 1px solid var(--border); }
-        .credits-bar { padding: 10px 20px; background: #08090b; font-size: 11px; color: #444; border-top: 1px solid var(--border); display: flex; justify-content: space-between; }
+        .credits-bar { padding: 15px 30px; background: #08090b; font-size: 12px; color: #555; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -82,8 +78,8 @@
         <div id="lawsContainer"></div>
 
         <div class="credits-bar">
-            <span>TERMINAL STATUS: ONLINE</span>
-            <span>DESIGN BY michal1448 | MDT v65</span>
+            <span>TERMINAL STATUS: SECURED</span>
+            <span style="color:var(--accent)">DESIGN BY MICHAEL | MDT v66</span>
         </div>
     </div>
 
@@ -91,6 +87,8 @@
         <div style="padding:20px; border-bottom:1px solid var(--border); font-weight:800; color:var(--accent);">AKTIVNÍ PROTOKOL PŘÍPADU</div>
         <div id="caseEntries" style="flex-grow:1; overflow-y:auto; padding:15px;"></div>
         
+        <div id="summaryWarnings" style="padding: 0 15px;"></div>
+
         <div class="summary-box">
             <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:15px; font-size:20px;">
                 <span>CELKEM:</span>
@@ -106,7 +104,7 @@
         <div class="modal-header">
             <h3 style="margin:0; color:var(--accent);">ARCHIV PŘÍPADŮ</h3>
             <div>
-                <button onclick="clearHistory()" style="background:var(--danger); color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; margin-right:10px;">SMAZAT HISTORII</button>
+                <button onclick="clearHistory()" style="background:var(--danger); color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; margin-right:10px;">VYMAZAT VŠE</button>
                 <button onclick="toggleHistory(false)" style="background:none; border:none; color:#fff; font-size:24px; cursor:pointer;">✕</button>
             </div>
         </div>
@@ -117,7 +115,7 @@
 <script>
     let protocolData = [];
     let allLaws = [];
-    let history = JSON.parse(localStorage.getItem('mdt_audit_v65') || '[]');
+    let history = JSON.parse(localStorage.getItem('mdt_audit_v66') || '[]');
 
     function handleLogin() {
         document.getElementById('loginOverlay').style.display = 'none';
@@ -145,7 +143,7 @@
                     minJ: rangeMatch ? parseInt(rangeMatch[1]) : (singleMatch ? parseInt(singleMatch[1]) : 0),
                     maxJ: rangeMatch ? parseInt(rangeMatch[2]) : (singleMatch ? parseInt(singleMatch[1]) : 99),
                     maxF: fineMatch ? parseInt(fineMatch[1].replace('.', '')) : 100000,
-                    lic: text.includes("ODEBRAT") ? (text.includes("Zbrojní") ? "ODEBRAT ZBROJNÍ PRŮKAZ" : "ODEBRAT ŘIDIČSKÝ PRŮKAZ") : null
+                    lic: text.includes("ODEBRAT") ? "ODEBRAT ZBROJNÍ PRŮKAZ" : null
                 };
             })
         }));
@@ -199,8 +197,7 @@
             <div class="protocol-item">
                 <button onclick="removeItem(${i.id})" style="position:absolute; right:10px; top:10px; background:none; border:none; color:var(--danger); cursor:pointer;">✕</button>
                 <div style="color:var(--accent); font-weight:900; font-size:13px; margin-bottom:4px;">${i.title}</div>
-                <div style="font-size:11px; color:#888; margin-bottom:10px;">${i.sub.substring(0, 100)}...</div>
-                <div style="display:flex; align-items:center; gap:20px;">
+                <div style="display:flex; align-items:center; gap:20px; margin-top:8px;">
                     <span style="color:var(--jail-color); font-size:12px; font-weight:bold;">LET: 
                         <input type="number" class="protocol-edit-input" value="${i.jail}" onblur="updProt(${i.id}, 'jail', this.value)">
                     </span>
@@ -222,9 +219,16 @@
     }
 
     function removeItem(id) { protocolData = protocolData.filter(x => x.id !== id); renderProtocol(); }
+
     function calc() {
-        document.getElementById('sumJail').innerText = protocolData.reduce((a, b) => a + b.jail, 0);
-        document.getElementById('sumFine').innerText = protocolData.reduce((a, b) => a + b.fine, 0).toLocaleString();
+        const totalJail = protocolData.reduce((a, b) => a + b.jail, 0);
+        const totalFine = protocolData.reduce((a, b) => a + b.fine, 0);
+        document.getElementById('sumJail').innerText = totalJail;
+        document.getElementById('sumFine').innerText = totalFine.toLocaleString();
+
+        // Varování v souhrnu dole
+        const warnings = protocolData.filter(x => x.lic).map(x => `<div class="license-tag-red" style="margin-bottom:10px;">⚠ ${x.lic} (Dle: ${x.title})</div>`).join('');
+        document.getElementById('summaryWarnings').innerHTML = warnings;
     }
 
     function toggleHistory(s) { document.getElementById('historyModal').style.display = s ? 'flex' : 'none'; if(s) renderHist(); }
@@ -234,11 +238,11 @@
             <div style="background:#000; padding:15px; border-radius:8px; margin-bottom:10px; border-left:4px solid var(--accent);">
                 <div style="font-size:10px; color:#555; margin-bottom:5px;">${h.date}</div>
                 <div style="font-size:16px; font-weight:900;">Trest: ${h.jail} let | Pokuta: ${h.fine.toLocaleString()} $</div>
-                <div style="font-size:11px; color:#aaa; margin-top:5px;">Paragrafy: ${h.laws}</div>
+                ${h.hasLic ? `<div style="color:var(--danger); font-size:11px; font-weight:bold; margin-top:5px;">⚠ ODEBRÁN PRŮKAZ</div>` : ''}
             </div>`).join('') : '<div style="text-align:center; color:#444; padding:40px;">Archiv je prázdný</div>';
     }
 
-    function clearHistory() { if(confirm("Smazat celou historii?")) { history = []; localStorage.setItem('mdt_audit_v65', '[]'); renderHist(); } }
+    function clearHistory() { if(confirm("Smazat celou historii?")) { history = []; localStorage.setItem('mdt_audit_v66', '[]'); renderHist(); } }
 
     function saveCase() {
         if (!protocolData.length) return;
@@ -246,11 +250,11 @@
             date: new Date().toLocaleString(),
             jail: protocolData.reduce((a, b) => a + b.jail, 0),
             fine: protocolData.reduce((a, b) => a + b.fine, 0),
-            laws: protocolData.map(x => x.title).join(', ')
+            hasLic: protocolData.some(x => x.lic)
         });
-        localStorage.setItem('mdt_audit_v65', JSON.stringify(history));
+        localStorage.setItem('mdt_audit_v66', JSON.stringify(history));
         protocolData = []; renderProtocol();
-        alert("Případ uložen do historie.");
+        alert("Případ uložen a vymazán.");
     }
 </script>
 </body>
