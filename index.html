@@ -65,7 +65,7 @@
         }
 
         .input-group { display: flex; gap: 8px; }
-        .input-box { background: #000; border: 1px solid #333; color: #fff; padding: 8px; width: 65px; text-align: center; border-radius: 4px; outline: none; transition: 0.3s; }
+        .input-box { background: #000; border: 1px solid #333; color: #fff; padding: 8px; width: 85px; text-align: center; border-radius: 4px; outline: none; transition: 0.2s; }
         .input-box[readonly] { background: #051a05; color: var(--fixed); border: 1px solid var(--fixed); cursor: not-allowed; }
 
         .btn-add { background: var(--accent); border: none; color: #000; padding: 8px 12px; font-weight: bold; cursor: pointer; border-radius: 4px; }
@@ -78,7 +78,6 @@
         .case-entry { background: #111; padding: 12px; border-bottom: 1px solid #222; position: relative; margin-bottom: 5px; border-left: 2px solid var(--accent); }
         .case-entry-title { color: var(--accent); font-weight: bold; font-size: 12px; display: block; }
         .case-entry-sub { color: #fff; font-size: 11px; display: block; margin-top: 2px; }
-
         .case-alert { color: var(--danger); font-weight: bold; font-size: 10px; text-transform: uppercase; display: block; margin-top: 5px; }
 
         .btn-delete-item { position: absolute; right: 8px; top: 8px; color: #ff4444; cursor: pointer; font-weight: bold; font-size: 18px; background: none; border: none; }
@@ -86,7 +85,7 @@
         .summary-box { border-top: 2px solid var(--accent); padding-top: 15px; margin-top: 10px; }
         .summary-line { display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; margin-bottom: 8px; }
 
-        /* NOTIFIKACE - musí být vidět! */
+        /* NOTIFIKACE */
         #notification {
             position: fixed; top: 30px; left: 50%; transform: translateX(-50%);
             background: #ff0000; color: white; padding: 20px 40px; 
@@ -108,7 +107,7 @@
 </head>
 <body>
 
-<div id="notification">CHYBA V SAZBĚ! OPRAV TREST ODNĚTNÍM SVOBODY</div>
+<div id="notification">CHYBA V SAZBĚ!</div>
 
 <div id="leftPanel">
     <div class="main-header">POLICAJNÍ DATABAZE - PENAL CODE - GenK</div>
@@ -134,7 +133,6 @@
         const n = document.getElementById('notification');
         n.innerText = msg;
         n.style.display = 'block';
-        console.error("Zablokováno: " + msg); // Pro kontrolu v konzoli (F12)
         setTimeout(() => { n.style.display = 'none'; }, 4000);
     }
 
@@ -163,9 +161,9 @@
                     <div class="sub-row">
                         <div class="sub-text">${displayHtml}</div>
                         <div class="input-group">
-                            <input type="number" class="input-box" id="j_${lIdx}_${rIdx}" value="${fJ || ''}" placeholder="Let" onclick="event.stopPropagation()" ${fJ !== null ? 'readonly' : ''}>
-                            <input type="number" class="input-box" id="f_${lIdx}_${rIdx}" value="${fF || ''}" placeholder="Suma" onclick="event.stopPropagation()" ${fF !== null ? 'readonly' : ''}>
-                            <button class="btn-add" onclick="event.stopPropagation(); addItem('${title}', ${lIdx}, ${rIdx})">+</button>
+                            <input type="number" class="input-box" id="j_${lIdx}_${rIdx}" value="${fJ || ''}" placeholder="Let" ${fJ !== null ? 'readonly' : ''}>
+                            <input type="number" class="input-box" id="f_${lIdx}_${rIdx}" value="${fF || ''}" placeholder="Pokuta $" ${fF !== null ? 'readonly' : ''}>
+                            <button class="btn-add" onclick="addItem('${title}', ${lIdx}, ${rIdx})">+</button>
                         </div>
                     </div>`;
             });
@@ -188,33 +186,50 @@
         const rowElement = jEl.closest('.sub-row');
         const fullText = rowElement.querySelector('.sub-text').innerText;
 
-        // --- MNOHEM SILNĚJŠÍ KONTROLA TEXTU ---
-        if (!jEl.readOnly && jEl.value) {
-            // Hledáme cokoli jako "1 na 5", "1 až 5", "1-5", "1 do 5"
-            const numbers = fullText.match(/\d+/g); 
-            // Pokud najdeme v textu dvě čísla u sebe, bereme je jako rozsah
-            if (numbers && numbers.length >= 2) {
-                // Musíme najít čísla, která následují po slovech o vězení/letech
-                const jailKeywords = ["rok", "let", "svobody"];
-                const containsJailWords = jailKeywords.some(word => fullText.toLowerCase().includes(word));
+        // --- KONTROLA SAZEB (VĚZENÍ I POKUTA) ---
+        // Vyčistíme text od teček v číslech (např. 10.000 -> 10000)
+        const cleanText = fullText.replace(/\./g, '');
+        const numbers = cleanText.match(/\d+/g);
 
-                if (containsJailWords) {
-                    const min = Math.min(...numbers.map(Number));
-                    const max = Math.max(...numbers.map(Number));
+        if (numbers && numbers.length >= 2) {
+            // Logika pro VĚZENÍ
+            if (!jEl.readOnly && jail > 0) {
+                if (fullText.toLowerCase().includes("rok") || fullText.toLowerCase().includes("let")) {
+                    // Najdeme nejmenší a největší číslo, které není obrovské (pokuta)
+                    const jailNums = numbers.filter(n => parseInt(n) < 1000).map(Number);
+                    if (jailNums.length >= 2) {
+                        const minJ = Math.min(...jailNums);
+                        const maxJ = Math.max(...jailNums);
+                        if (jail < minJ || jail > maxJ) {
+                            showNotify(`CHYBA: Vězení musí být ${minJ} - ${maxJ} let!`);
+                            jEl.style.boxShadow = "0 0 10px red";
+                            return;
+                        }
+                    }
+                }
+            }
 
-                    if (jail < min || jail > max) {
-                        showNotify(`NEPOVOLENO! Sazba je ${min} až ${max} let.`);
-                        jEl.style.border = "2px solid red";
-                        jEl.style.boxShadow = "0 0 10px red";
-                        return; // BLOKACE PŘIDÁNÍ
+            // Logika pro POKUTU
+            if (!fEl.readOnly && fine > 0) {
+                if (fullText.includes("$") || fullText.toLowerCase().includes("pokuta")) {
+                    // Najdeme velká čísla (pokuty)
+                    const fineNums = numbers.filter(n => parseInt(n) >= 100).map(Number);
+                    if (fineNums.length >= 2) {
+                        const minF = Math.min(...fineNums);
+                        const maxF = Math.max(...fineNums);
+                        if (fine < minF || fine > maxF) {
+                            showNotify(`CHYBA: Pokuta musí být ${minF.toLocaleString()}$ - ${maxF.toLocaleString()}$!`);
+                            fEl.style.boxShadow = "0 0 10px red";
+                            return;
+                        }
                     }
                 }
             }
         }
         
-        // Reset stylu pokud je to v pořádku
-        jEl.style.border = "1px solid #333";
+        // Reset stylu
         jEl.style.boxShadow = "none";
+        fEl.style.boxShadow = "none";
 
         let licenses = [];
         if (fullText.toLowerCase().includes("zbrojní")) licenses.push("ZBROJNÍ PRŮKAZ");
