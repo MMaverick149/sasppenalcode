@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP - MDT Penal Code System</title>
+    <title>SASP - MDT Terminal v64</title>
     <style>
         :root {
             --bg-main: #0a0b0d;
@@ -20,7 +20,7 @@
         /* LOGIN */
         #loginOverlay { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('https://i.imgur.com/vS7S6R6.jpg'); 
+            background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('https://r2.fivemanage.com/L1FYmIx7KR3NO3g9xlt6b/pd.png'); 
             background-size: cover; background-position: center;
             z-index: 5000; display: flex; flex-direction: column; justify-content: center; align-items: center; 
         }
@@ -40,17 +40,15 @@
         .law-content { display: none; padding: 15px 20px; border-top: 1px solid var(--border); background: #111317; }
         .law-card.active .law-content { display: block; }
 
-        .input-box { background: #000; border: 1px solid var(--border); color: #fff; padding: 8px; width: 80px; text-align: center; border-radius: 4px; font-weight: bold; outline: none; transition: 0.3s; }
+        .input-box { background: #000; border: 1px solid var(--border); color: #fff; padding: 8px; width: 80px; text-align: center; border-radius: 4px; font-weight: bold; outline: none; }
         .input-box:focus { border-color: var(--jail-color); }
-        .fixed-box { border: 2px solid var(--danger) !important; background: rgba(255, 68, 68, 0.1) !important; cursor: not-allowed; }
 
         /* PROTOKOL */
-        .protocol-item { background: #000; padding: 15px; border-radius: 8px; border-left: 4px solid var(--jail-color); margin-bottom: 15px; position: relative; animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
-        
+        .protocol-item { background: #000; padding: 15px; border-radius: 8px; border-left: 4px solid var(--jail-color); margin-bottom: 15px; position: relative; }
         .protocol-edit-input { background: transparent; border: none; border-bottom: 1px solid #333; color: inherit; width: 60px; text-align: center; font-weight: 900; font-size: 16px; outline: none; }
-
-        .license-alert { background: rgba(255, 68, 68, 0.15); color: var(--danger); padding: 12px; border: 1px solid var(--danger); border-radius: 4px; font-size: 11px; font-weight: 900; text-align: center; margin: 10px 25px; text-transform: uppercase; }
+        
+        /* ČERVENÝ ŠTÍTEK ODEBRAT */
+        .license-tag { background: var(--danger); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 900; text-transform: uppercase; margin-top: 5px; display: inline-block; }
 
         /* HISTORIE MODAL */
         #historyModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 6000; justify-content: center; align-items: center; }
@@ -59,49 +57,35 @@
         #historyList { padding: 20px; overflow-y: auto; flex-grow: 1; }
 
         .summary-box { padding: 25px; background: #000; border-top: 1px solid var(--border); }
-        .credits-panel { padding: 15px; background: #08090b; border-top: 1px solid var(--border); font-size: 11px; color: #444; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
 
 <div id="loginOverlay">
-    <div style="text-align:center; margin-bottom:30px;">
-        <h1 style="color:var(--accent); font-size:50px; margin:0;">SASP MDT</h1>
-        <p style="color:#666; letter-spacing:5px;">San Andreas State Police</p>
-    </div>
-    <button class="login-btn" onclick="handleLogin()">Přihlásit se do sítě</button>
+    <button class="login-btn" onclick="handleLogin()">Vstoupit do MDT</button>
 </div>
 
 <div id="mainApp">
     <div id="leftPanel">
         <div class="header-bar">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <h2 style="margin:0; color:var(--accent); letter-spacing:1px;">TRESTNÍ ZÁKONÍK</h2>
-                <button onclick="toggleHistory(true)" style="background:var(--jail-color); color:#fff; border:none; padding:8px 20px; cursor:pointer; border-radius:4px; font-weight:bold;">ZOBRAZIT HISTORII</button>
+                <h2 style="margin:0; color:var(--accent);">TRESTNÍ ZÁKONÍK</h2>
+                <button onclick="toggleHistory(true)" style="background:var(--jail-color); color:#fff; border:none; padding:8px 20px; cursor:pointer; border-radius:4px; font-weight:bold;">HISTORIE</button>
             </div>
-            <input type="text" id="searchInput" placeholder="Hledat paragraf..." oninput="renderLaws()" style="width:100%; background:#000; border:1px solid var(--border); color:#fff; padding:12px; border-radius:6px; box-sizing:border-box;">
+            <input type="text" id="searchInput" placeholder="Hledat..." oninput="renderLaws()" style="width:100%; background:#000; border:1px solid var(--border); color:#fff; padding:12px; border-radius:6px;">
         </div>
-        
         <div id="lawsContainer"></div>
-
-        <div class="credits-panel">
-            <span>TERMINAL STATUS: ONLINE</span>
-            <span style="color:#888;">DEVELOPED BY <b>Michal1448</b> | SASP Penal Code Systém</span>
-        </div>
     </div>
 
     <div id="rightPanel">
-        <div style="padding:20px; border-bottom:1px solid var(--border); font-weight:800; color:var(--accent); letter-spacing:1px;">AKTIVNÍ PROTOKOL</div>
+        <div style="padding:20px; border-bottom:1px solid var(--border); font-weight:800; color:var(--accent);">AKTIVNÍ PROTOKOL</div>
         <div id="caseEntries" style="flex-grow:1; overflow-y:auto; padding:15px;"></div>
-        
-        <div id="licenseWarningContainer"></div>
-
         <div class="summary-box">
             <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:15px; font-size:20px;">
                 <span>CELKEM:</span>
                 <span><span id="sumJail" style="color:var(--jail-color)">0</span> let | <span id="sumFine" style="color:var(--fine-color)">0</span> $</span>
             </div>
-            <button onclick="saveCase()" style="width:100%; padding:18px; background:var(--jail-color); color:#fff; border:none; border-radius:6px; font-weight:900; cursor:pointer; font-size:16px; transition:0.2s;">ULOŽIT A UZAVŘÍT PŘÍPAD</button>
+            <button onclick="saveCase()" style="width:100%; padding:18px; background:var(--jail-color); color:#fff; border:none; border-radius:6px; font-weight:900; cursor:pointer;">ULOŽIT PŘÍPAD</button>
         </div>
     </div>
 </div>
@@ -109,8 +93,11 @@
 <div id="historyModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 style="margin:0; color:var(--accent);">HISTORIE PŘÍPADŮ</h3>
-            <button onclick="toggleHistory(false)" style="background:none; border:none; color:#fff; font-size:24px; cursor:pointer;">✕</button>
+            <h3 style="margin:0; color:var(--accent);">HISTORIE</h3>
+            <div>
+                <button onclick="clearHistory()" style="background:var(--danger); color:#fff; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:12px; margin-right:10px;">VYMAZAT VŠE</button>
+                <button onclick="toggleHistory(false)" style="background:none; border:none; color:#fff; font-size:20px; cursor:pointer;">✕</button>
+            </div>
         </div>
         <div id="historyList"></div>
     </div>
@@ -119,7 +106,7 @@
 <script>
     let protocolData = [];
     let allLaws = [];
-    let history = JSON.parse(localStorage.getItem('mdt_history_v63') || '[]');
+    let history = JSON.parse(localStorage.getItem('mdt_history_v64') || '[]');
 
     function handleLogin() {
         document.getElementById('loginOverlay').style.display = 'none';
@@ -136,19 +123,19 @@
         allLaws = Array.from(temp.querySelectorAll('.law-item')).map(item => ({
             title: item.getAttribute('data-title'),
             subs: Array.from(item.querySelectorAll('.sub-line')).map(line => {
-                // Detekce MAX limitu přímo z textu paragrafu
                 const text = line.innerText;
-                const jailMatches = text.match(/(\d+)\s*-\s*(\d+)\s*let/) || text.match(/(\d+)\s*let/);
+                // Detekce rozsahu (min-max)
+                const rangeMatch = text.match(/(\d+)\s*-\s*(\d+)\s*let/);
+                const singleMatch = text.match(/(\d+)\s*let/);
                 const fineMatch = text.match(/do\s*výše\s*([\d.]+)\s*\$/);
                 
                 return {
                     html: line.innerHTML,
                     text: text,
-                    fixJ: line.getAttribute('data-fix-jail'),
-                    fixF: line.getAttribute('data-fix-fine'),
-                    maxJ: jailMatches ? (jailMatches[2] ? parseInt(jailMatches[2]) : parseInt(jailMatches[1])) : 99,
+                    minJ: rangeMatch ? parseInt(rangeMatch[1]) : (singleMatch ? parseInt(singleMatch[1]) : 0),
+                    maxJ: rangeMatch ? parseInt(rangeMatch[2]) : (singleMatch ? parseInt(singleMatch[1]) : 99),
                     maxF: fineMatch ? parseInt(fineMatch[1].replace('.', '')) : 999999,
-                    lic: text.match(/ODEBRAT (Zbrojní|Řidičský) Průkaz/i) ? text.match(/ODEBRAT (Zbrojní|Řidičský) Průkaz/i)[0] : null
+                    lic: text.includes("ODEBRAT") ? "ODEBRAT PRŮKAZ" : null
                 };
             })
         }));
@@ -160,82 +147,62 @@
         const search = document.getElementById('searchInput').value.toLowerCase();
 
         container.innerHTML = allLaws.filter(l => l.title.toLowerCase().includes(search)).map(law => {
-            const rows = law.subs.map((sub, idx) => {
-                const isFixJ = sub.fixJ !== null;
-                const isFixF = sub.fixF !== null;
-                return `<div style="padding:12px 0; border-bottom:1px solid #222; display:flex; align-items:center; gap:10px;">
-                    <div style="flex:1; font-size:12px; line-height:1.4;">${sub.html}</div>
-                    <input type="number" class="input-box ${isFixJ ? 'fixed-box' : ''}" id="j_${law.title}_${idx}" value="${isFixJ ? sub.fixJ : ''}" placeholder="Max ${sub.maxJ}" oninput="validate(this, ${sub.maxJ})">
-                    <input type="number" class="input-box ${isFixF ? 'fixed-box' : ''}" id="f_${law.title}_${idx}" value="${isFixF ? sub.fixF : ''}" placeholder="${sub.maxF > 9999 ? '$' : sub.maxF}" oninput="validate(this, ${sub.maxF})">
-                    <button onclick="addItem('${law.title}', ${idx})" style="background:var(--accent); border:none; padding:10px 15px; border-radius:4px; font-weight:900; cursor:pointer;">+</button>
-                </div>`;
-            }).join('');
+            const rows = law.subs.map((sub, idx) => `
+                <div style="padding:10px 0; border-bottom:1px solid #222; display:flex; align-items:center; gap:10px;">
+                    <div style="flex:1; font-size:12px;">${sub.html}</div>
+                    <input type="number" class="input-box" id="j_${law.title}_${idx}" placeholder="${sub.minJ}-${sub.maxJ} let" onblur="validateRange(this, ${sub.minJ}, ${sub.maxJ})">
+                    <button onclick="addItem('${law.title}', ${idx})" style="background:var(--accent); border:none; padding:8px 12px; border-radius:4px; font-weight:bold; cursor:pointer;">+</button>
+                </div>`).join('');
             return `<div class="law-card"><div class="law-header" onclick="this.parentElement.classList.toggle('active')"><span>${law.title}</span><span>▼</span></div><div class="law-content">${rows}</div></div>`;
         }).join('');
     }
 
-    function validate(el, max) {
-        if (parseInt(el.value) > max) {
-            el.value = max;
-            el.style.borderColor = "var(--danger)";
-            setTimeout(() => el.style.borderColor = "var(--border)", 1000);
-        }
+    function validateRange(el, min, max) {
+        let val = parseInt(el.value);
+        if (isNaN(val)) return;
+        if (val < min) el.value = min;
+        if (val > max) el.value = max;
     }
 
     function addItem(title, idx) {
         const sub = allLaws.find(l => l.title === title).subs[idx];
-        const jVal = document.getElementById(`j_${title}_${idx}`).value;
-        const fVal = document.getElementById(`f_${title}_${idx}`).value;
+        const jInput = document.getElementById(`j_${title}_${idx}`);
+        let val = parseInt(jInput.value) || sub.minJ;
 
-        protocolData.push({
-            id: Date.now(),
-            title,
-            sub: sub.text,
-            jail: sub.fixJ !== null ? parseInt(sub.fixJ) : (parseInt(jVal) || 0),
-            fine: sub.fixF !== null ? parseInt(sub.fixF) : (parseInt(fVal) || 0),
-            maxJ: sub.maxJ,
-            maxF: sub.maxF,
-            lic: sub.lic,
-            isFixJ: sub.fixJ !== null,
-            isFixF: sub.fixF !== null
-        });
+        protocolData.push({ id: Date.now(), title, sub: sub.text, jail: val, minJ: sub.minJ, maxJ: sub.maxJ, lic: sub.lic });
         renderProtocol();
     }
 
     function renderProtocol() {
-        const cont = document.getElementById('caseEntries');
-        cont.innerHTML = protocolData.map(i => `
+        document.getElementById('caseEntries').innerHTML = protocolData.map(i => `
             <div class="protocol-item">
                 <button onclick="removeItem(${i.id})" style="position:absolute; right:10px; top:10px; background:none; border:none; color:var(--danger); cursor:pointer;">✕</button>
-                <div style="color:var(--accent); font-weight:900; font-size:13px; margin-bottom:4px;">${i.title}</div>
-                <div style="font-size:11px; color:#888; margin-bottom:8px;">${i.sub.substring(0, 80)}...</div>
-                <div style="display:flex; gap:20px;">
-                    <span style="color:var(--jail-color); font-size:12px;">LET: <input type="number" class="protocol-edit-input" value="${i.jail}" ${i.isFixJ ? 'disabled' : ''} oninput="updateItem(${i.id},'jail',this)"></span>
-                    <span style="color:var(--fine-color); font-size:12px;">$: <input type="number" class="protocol-edit-input" value="${i.fine}" ${i.isFixF ? 'disabled' : ''} oninput="updateItem(${i.id},'fine',this)"></span>
+                <div style="color:var(--accent); font-weight:900; font-size:13px;">${i.title}</div>
+                <div style="font-size:11px; color:#888;">${i.sub.substring(0, 60)}...</div>
+                <div style="margin-top:5px;">
+                    <span style="color:var(--jail-color); font-size:12px;">LET: 
+                        <input type="number" class="protocol-edit-input" value="${i.jail}" onblur="updateProtocolItem(${i.id}, this.value)">
+                    </span>
+                    ${i.lic ? `<div class="license-tag">${i.lic}</div>` : ''}
                 </div>
             </div>`).join('');
-
-        const alerts = protocolData.filter(x => x.lic).map(x => `<div class="license-alert">⚠ ${x.lic} (Dle: ${x.title})</div>`);
-        document.getElementById('licenseWarningContainer').innerHTML = [...new Set(alerts)].join('');
         calculateSum();
     }
 
-    function updateItem(id, key, el) {
+    function updateProtocolItem(id, val) {
         const item = protocolData.find(x => x.id === id);
-        const max = key === 'jail' ? item.maxJ : item.maxF;
-        if (parseInt(el.value) > max) el.value = max;
-        item[key] = parseInt(el.value) || 0;
-        calculateSum();
-    }
-
-    function calculateSum() {
-        let tj = protocolData.reduce((a, b) => a + b.jail, 0);
-        let tf = protocolData.reduce((a, b) => a + b.fine, 0);
-        document.getElementById('sumJail').innerText = tj;
-        document.getElementById('sumFine').innerText = tf.toLocaleString();
+        let v = parseInt(val);
+        if (v < item.minJ) v = item.minJ;
+        if (v > item.maxJ) v = item.maxJ;
+        item.jail = v;
+        renderProtocol();
     }
 
     function removeItem(id) { protocolData = protocolData.filter(x => x.id !== id); renderProtocol(); }
+
+    function calculateSum() {
+        document.getElementById('sumJail').innerText = protocolData.reduce((a, b) => a + b.jail, 0);
+    }
 
     function toggleHistory(show) {
         document.getElementById('historyModal').style.display = show ? 'flex' : 'none';
@@ -244,22 +211,26 @@
 
     function renderHistory() {
         document.getElementById('historyList').innerHTML = history.length ? history.slice().reverse().map(h => `
-            <div style="background:#000; padding:15px; border-radius:8px; margin-bottom:10px; border-left:4px solid var(--accent);">
-                <div style="font-size:11px; color:#555;">${h.date}</div>
-                <div style="font-size:18px; font-weight:900;">${h.jail} let | ${h.fine.toLocaleString()} $</div>
-            </div>`).join('') : '<div style="text-align:center; color:#444;">Žádné záznamy</div>';
+            <div style="background:#000; padding:10px; border-radius:6px; margin-bottom:8px; border-left:4px solid var(--accent);">
+                <div style="font-size:10px; color:#555;">${h.date}</div>
+                <div style="font-weight:900;">${h.jail} let</div>
+            </div>`).join('') : '<div style="text-align:center; color:#444;">Prázdno</div>';
+    }
+
+    function clearHistory() {
+        if(confirm("Opravdu smazat celou historii?")) {
+            history = [];
+            localStorage.setItem('mdt_history_v64', JSON.stringify(history));
+            renderHistory();
+        }
     }
 
     function saveCase() {
         if (!protocolData.length) return;
-        history.push({
-            date: new Date().toLocaleString(),
-            jail: protocolData.reduce((a, b) => a + b.jail, 0),
-            fine: protocolData.reduce((a, b) => a + b.fine, 0)
-        });
-        localStorage.setItem('mdt_history_v63', JSON.stringify(history));
+        history.push({ date: new Date().toLocaleString(), jail: protocolData.reduce((a, b) => a + b.jail, 0) });
+        localStorage.setItem('mdt_history_v64', JSON.stringify(history));
         protocolData = []; renderProtocol();
-        alert("Případ byl úspěšně uzavřen a archivován.");
+        alert("Uloženo.");
     }
 </script>
 </body>
