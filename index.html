@@ -29,7 +29,8 @@
 
         .input-group { display: flex; gap: 8px; }
         .input-box { background: #000; border: 1px solid #333; color: #fff; padding: 8px; width: 75px; text-align: center; border-radius: 4px; outline: none; }
-        .input-box[readonly] { border-color: #004400; color: var(--fixed); background: #051a05; cursor: not-allowed; font-weight: bold; }
+        /* Uzamčená pole mají zelené ohraničení a text */
+        .input-box[readonly] { border-color: var(--fixed) !important; color: var(--fixed) !important; background: #051a05; cursor: not-allowed; font-weight: bold; }
         
         .btn-add { background: var(--accent); border: none; color: #000; padding: 8px 12px; font-weight: bold; cursor: pointer; border-radius: 4px; }
         .case-entry { background: #111; padding: 12px; border-bottom: 1px solid #222; position: relative; margin-bottom: 5px; border-left: 2px solid var(--accent); }
@@ -83,7 +84,6 @@
                 const displayHtml = text.replace(/ODEBRAT Zbrojní Průkaz/g, '<span class="license-danger">ODEBRAT Zbrojní Průkaz</span>')
                                         .replace(/ODEBRAT Řidičský Průkaz/g, '<span class="license-danger">ODEBRAT Řidičský Průkaz</span>');
 
-                // ABSOLUTNÍ PRIORITA: data-fix-jail a data-fix-fine
                 const fixJail = line.getAttribute('data-fix-jail');
                 const fixFine = line.getAttribute('data-fix-fine');
 
@@ -93,11 +93,11 @@
                         <div class="input-group">
                             <input type="number" class="input-box" id="j_${lIdx}_${rIdx}" 
                                 value="${fixJail !== null ? fixJail : ''}" 
-                                placeholder="${fixJail !== null ? '' : 'Let'}" 
+                                placeholder="Let" 
                                 ${fixJail !== null ? 'readonly' : ''}>
                             <input type="number" class="input-box" id="f_${lIdx}_${rIdx}" 
                                 value="${fixFine !== null ? fixFine : ''}" 
-                                placeholder="${fixFine !== null ? '' : 'Suma'}" 
+                                placeholder="Suma" 
                                 ${fixFine !== null ? 'readonly' : ''}>
                             <button class="btn-add" onclick="addItem('${title}', ${lIdx}, ${rIdx})">+</button>
                         </div>
@@ -114,44 +114,45 @@
         const jEl = document.getElementById(`j_${lIdx}_${rIdx}`);
         const fEl = document.getElementById(`f_${lIdx}_${rIdx}`);
         
-        // Získání hodnoty - pokud je pole prázdné a není readonly, bereme 0
         const userJail = jEl.value === "" ? 0 : parseInt(jEl.value);
         const userFine = fEl.value === "" ? 0 : parseInt(fEl.value);
         
         const rowEl = jEl.closest('.sub-row');
         const formattedHtml = rowEl.querySelector('.sub-text').innerHTML;
         const cleanText = rowEl.querySelector('.sub-text').innerText.replace(/(?<=\d)[\s.](?=\d)/g, '').replace(/[.$]/g, '');
-        const isRange = /od\s+\d+\s+(roku|let|dne|dnů|měsíců).+na\s+\d+/i.test(cleanText);
 
-        // VALIDACE LET (pouze pokud není pole zamčené)
+        // --- VALIDACE POUZE POKUD NENÍ POLE PEVNĚ DANÉ ---
+        
+        // Validace vězení
         if (!jEl.readOnly) {
             const jailPart = cleanText.split(/pokut/i)[0];
             const jailNums = (jailPart.match(/\d+/g) || []).map(Number).filter(n => n < 100);
             if (jailNums.length > 0) {
                 const max = Math.max(...jailNums);
-                const min = isRange ? Math.min(...jailNums) : max;
+                // Detekce "od X let do Y let"
+                const rangeMatch = cleanText.match(/od\s+(\d+)\s+let\s+do\s+(\d+)\s+let/i);
+                const min = rangeMatch ? parseInt(rangeMatch[1]) : (cleanText.includes("sazba") ? Math.min(...jailNums) : max);
+                
                 if (userJail < min || userJail > max) {
-                    showNotify("CHYBA V TRESTU ODNĚTÍM SVOBODY UPRAV DÉLKU TRESTU DLE POVOLENÉHO PARAGRAFU");
+                    showNotify("CHYBA V TRESTU ODNĚTÍM SVOBODY UPRAV DÉLKU TRESTU DLE POVOLENÉHO PARAGRAFU !");
                     return;
                 }
             }
         }
 
-        // VALIDACE POKUTY (pouze pokud není pole zamčené)
+        // Validace pokuty
         if (!fEl.readOnly) {
             const finePart = cleanText.includes("pokut") ? cleanText.split(/pokut/i)[1] : cleanText;
             const fineNums = (finePart.match(/\d+/g) || []).map(Number).filter(n => n >= 50);
             if (fineNums.length > 0) {
                 const max = Math.max(...fineNums);
-                const min = isRange ? Math.min(...fineNums) : (cleanText.includes("do výše") ? 50 : max);
+                const min = cleanText.includes("do výše") ? 50 : Math.min(...fineNums);
                 if (userFine < min || userFine > max) {
-                    showNotify("CHYBA FINANČNÍ ČÁSTKY UPRAV JÍ PODLE PARAGRAFU");
+                    showNotify("CHYBA FINANČNÍ ČÁSTKY UPRAV JÍ PODLE PARAGRAFU !");
                     return;
                 }
             }
         }
-
-        if (userJail === 0 && userFine === 0 && !jEl.readOnly && !fEl.readOnly) return;
 
         protocolData.push({ title, jail: userJail, fine: userFine, html: formattedHtml });
         render();
@@ -165,8 +166,9 @@
 
         protocolData.forEach((i, idx) => {
             tj += i.jail; tf += i.fine;
-            if (i.html.toLowerCase().includes("zbrojní průkaz")) allLics.add("ZBROJNÍ PRŮKAZ");
-            if (i.html.toLowerCase().includes("řidičský průkaz")) allLics.add("ŘIDIČSKÝ PRŮKAZ");
+            // Detekce průkazů přímo z uloženého HTML řádku
+            if (i.html.includes("Zbrojní Průkaz")) allLics.add("ZBROJNÍ PRŮKAZ");
+            if (i.html.includes("Řidičský Průkaz")) allLics.add("ŘIDIČSKÝ PRŮKAZ");
 
             cont.innerHTML += `<div class="case-entry">
                 <button style="position:absolute; right:8px; top:8px; color:red; background:none; border:none; cursor:pointer; font-size:18px;" onclick="removeItem(${idx})">×</button>
@@ -185,9 +187,7 @@
         if (allLics.size > 0) {
             ga.style.display = "block";
             document.getElementById('alertList').innerText = Array.from(allLics).join(" + ");
-        } else {
-            ga.style.display = "none";
-        }
+        } else { ga.style.display = "none"; }
     }
 
     function removeItem(idx) { protocolData.splice(idx, 1); render(); }
