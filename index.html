@@ -2,18 +2,115 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP - Penal Code</title>
+    <title>Policejní Kalkulačka v18 - Gen Trooper</title>
     <style>
         :root {
-            --bg: #000; --card: #0c0c0c; --accent: #ffcc00; --border: #1a1a1a;
-            --jail: #00aaff; --fine: #00ff88; --danger: #ff4444; --fixed: #00ff88;
+            --bg: #1a1d24; /* Tmavší pozadí podle tvého obrázku */
+            --card: #111419; /* Pozadí boxu */
+            --accent: #ffcc00; /* Žlutá */
+            --border: #2a2e37; /* Barva ohraničení boxu */
+            --jail: #00aaff;
+            --fine: #00ff88;
+            --danger: #ff4444;
+            --fixed: #00ff88;
+            --discord: #5865f2; /* Barva Discord tlačítka pro inspiraci */
         }
-        body { background: var(--bg); color: #fff; font-family: Arial, sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+
+        body {
+            background: var(--bg);
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- STYL PRO ÚVODNÍ OBRAZOVKU (MODAL) --- */
+        #welcomeModal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg); /* Pozadí celé obrazovky */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100000; /* Úplně nahoře */
+        }
+
+        .modal-box {
+            background: var(--card);
+            width: 400px;
+            height: 600px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* Logo nahoře, tlačítko dole */
+            align-items: center;
+            padding: 50px 30px;
+            box-sizing: border-box;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 50px;
+        }
+
+        .logo-text {
+            font-size: 48px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .logo-cube {
+            width: 60px;
+            height: 60px;
+            /* Jednoduchá kostka pomocí CSS, pokud nemáš obrázek */
+            background: linear-gradient(135deg, #fff 0%, #aaa 100%);
+            transform: rotateX(-20deg) rotateY(45deg);
+            box-shadow: 10px 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .welcome-text {
+            color: #aaa;
+            font-size: 16px;
+            text-align: center;
+            margin-top: -100px; /* Posun textu blíž ke středu */
+        }
+
+        .modal-btn {
+            width: 100%;
+            background: var(--accent); /* Tvoje žlutá barevná kombinace */
+            color: #000;
+            border: none;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: background 0.2s;
+        }
+
+        .modal-btn:hover {
+            background: #e6b800;
+        }
+
+        /* --- STYL PRO HLAVNÍ OBSAH (KALKULAČKU) --- */
+        #mainContent {
+            display: none; /* Skryto, dokud se neklikne na tlačítko */
+            width: 100%;
+            height: 100%;
+            display: flex;
+        }
+
         #leftPanel { flex: 3; padding: 20px; overflow-y: auto; }
-        #rightPanel { flex: 1; min-width: 350px; background: var(--card); border-left: 2px solid var(--border); padding: 20px; display: flex; flex-direction: column; }
+        #rightPanel { flex: 1; min-width: 350px; background: var(--card); border-left: 2px solid #2a2e37; padding: 20px; display: flex; flex-direction: column; }
         .main-header { font-size: 28px; font-weight: bold; text-transform: uppercase; margin-bottom: 20px; border-bottom: 3px solid var(--accent); padding-bottom: 10px; }
-        #searchInput { width: 100%; background: #111; border: 1px solid var(--border); color: var(--accent); padding: 12px; margin-bottom: 20px; border-left: 4px solid var(--accent); outline: none; box-sizing: border-box; }
-        .law-card { background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--accent); margin-bottom: 10px; border-radius: 4px; }
+        #searchInput { width: 100%; background: #111; border: 1px solid #2a2e37; color: var(--accent); padding: 12px; margin-bottom: 20px; border-left: 4px solid var(--accent); outline: none; box-sizing: border-box; }
+        .law-card { background: var(--card); border: 1px solid #2a2e37; border-left: 3px solid var(--accent); margin-bottom: 10px; border-radius: 4px; }
         .law-header { padding: 15px; cursor: pointer; }
         .law-title { color: var(--accent); font-weight: bold; text-transform: uppercase; }
         .law-content { display: none; padding: 0 15px 15px 15px; border-top: 1px solid #111; }
@@ -26,34 +123,56 @@
         .input-box[readonly] { border-color: var(--fixed) !important; color: var(--fixed) !important; background: #051a05; cursor: not-allowed; font-weight: bold; }
         .btn-add { background: var(--accent); border: none; color: #000; padding: 8px 12px; font-weight: bold; cursor: pointer; border-radius: 4px; }
         .case-entry { background: #111; padding: 12px; border-bottom: 1px solid #222; position: relative; margin-bottom: 5px; border-left: 2px solid var(--accent); }
-        #notification { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #ff0000; color: white; padding: 30px 40px; border-radius: 10px; font-weight: bold; z-index: 99999; display: none; border: 4px solid white; text-transform: uppercase; font-size: 18px; text-align: center; box-shadow: 0 0 100px #000; }
+        #notification { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #ff0000; color: white; padding: 30px 40px; border-radius: 10px; font-weight: bold; z-index: 99999; display: none; border: 4px solid white; text-transform: uppercase; font-size: 18px; text-align: center; box-shadow: 0 0 100px #000; max-width: 80%; }
         #globalAlert { background: rgba(255, 68, 68, 0.2); border: 2px solid var(--danger); color: #fff; padding: 10px; margin-bottom: 15px; font-size: 13px; font-weight: bold; display: none; text-align: center; }
     </style>
 </head>
 <body>
 
-<div id="notification"></div>
+<div id="welcomeModal">
+    <div class="modal-box">
+        <div class="logo-area">
+            <div class="logo-text">Gen</div>
+            <div class="logo-cube"></div> </div>
+        
+        <div class="welcome-text">
+            <h2>Vítej Trooper !</h2>
+            <p>Pro přístup do kalkulačky stiskni tlačítko níže.</p>
+        </div>
 
-<div id="leftPanel">
-    <div class="main-header">POLICAJNÍ DATABAZE - PENAL CODE - GenK</div>
-    <input type="text" id="searchInput" placeholder="Vyhledat paragraf..." oninput="doSearch()">
-    <div id="lawsContainer"></div>
+        <button class="modal-btn" onclick="closeModal()">Vstoupit do databáze</button>
+    </div>
 </div>
 
-<div id="rightPanel">
-    <div style="color:var(--accent); font-weight:bold; border-bottom:1px solid var(--accent); padding-bottom:10px; margin-bottom:15px;">AKTIVNÍ PROTOKOL</div>
-    <div id="globalAlert">⚠ ZABAVIT: <span id="alertList"></span></div>
-    <div id="caseEntries" style="flex-grow:1; overflow-y:auto;"></div>
-    <div style="border-top:2px solid var(--accent); padding-top:15px; margin-top:10px;">
-        <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:16px; margin-bottom:8px;">Vězení: <span id="sumJail" style="color:var(--jail)">0 let</span></div>
-        <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:16px; margin-bottom:15px;">Pokuta: <span id="sumFine" style="color:var(--fine)">0 $</span></div>
-        <button style="width:100%; background:transparent; border:1px solid var(--danger); color:var(--danger); padding:10px; cursor:pointer; font-weight:bold;" onclick="clearAll()">VYMAZAT PŘÍPAD</button>
+<div id="mainContent" style="display:none;">
+    <div id="notification"></div>
+
+    <div id="leftPanel">
+        <div class="main-header">POLICAJNÍ DATABÁZE - GEN TRN</div>
+        <input type="text" id="searchInput" placeholder="Vyhledat paragraf..." oninput="doSearch()">
+        <div id="lawsContainer"></div>
+    </div>
+
+    <div id="rightPanel">
+        <div style="color:var(--accent); font-weight:bold; border-bottom:1px solid var(--accent); padding-bottom:10px; margin-bottom:15px;">AKTIVNÍ PROTOKOL</div>
+        <div id="globalAlert">⚠ ZABAVIT: <span id="alertList"></span></div>
+        <div id="caseEntries" style="flex-grow:1; overflow-y:auto;"></div>
+        <div style="border-top:2px solid var(--accent); padding-top:15px; margin-top:10px;">
+            <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:16px; margin-bottom:8px;">Vězení: <span id="sumJail" style="color:var(--jail)">0 let</span></div>
+            <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:16px; margin-bottom:15px;">Pokuta: <span id="sumFine" style="color:var(--fine)">0 $</span></div>
+            <button style="width:100%; background:transparent; border:1px solid var(--danger); color:var(--danger); padding:10px; cursor:pointer; font-weight:bold;" onclick="clearAll()">VYMAZAT PŘÍPAD</button>
+        </div>
     </div>
 </div>
 
 <script>
-    // Uvítací okno při zapnutí [cite: 2026-03-25]
-    alert("Vítej Trooper !");
+    // Funkce pro zavření úvodního okna a zobrazení kalkulačky [cite: 2026-03-28]
+    function closeModal() {
+        document.getElementById('welcomeModal').style.display = 'none';
+        document.getElementById('mainContent').style.display = 'flex';
+        // Spustíme načítání zákonů až po zavření okna, aby to bylo plynulé
+        loadLaws();
+    }
 
     let protocolData = [];
 
@@ -64,83 +183,94 @@
     }
 
     async function loadLaws() {
-        const res = await fetch('tresty.html?v=' + Date.now());
-        const html = await res.text();
-        const temp = document.createElement('div');
-        temp.innerHTML = html;
-        const container = document.getElementById('lawsContainer');
-        container.innerHTML = "";
-        
-        temp.querySelectorAll('.law-item').forEach((item, lIdx) => {
-            const title = item.getAttribute('data-title');
-            let rows = "";
-            item.querySelectorAll('.sub-line').forEach((line, rIdx) => {
-                const text = line.innerHTML;
-                const displayHtml = text.replace(/ODEBRAT Zbrojní Průkaz/g, '<span class="license-danger">ODEBRAT Zbrojní Průkaz</span>')
-                                        .replace(/ODEBRAT Řidičský Průkaz/g, '<span class="license-danger">ODEBRAT Řidičský Průkaz</span>');
+        // Kontrola, zda už není obsah načtený (aby se nenačítal dvakrát)
+        if (document.getElementById('lawsContainer').innerHTML !== "") return;
 
-                // Čtení fixních hodnot z tvého HTML [cite: 2026-03-25]
-                const fixJail = line.getAttribute('data-fix-jail');
-                const fixFine = line.getAttribute('data-fix-fine');
+        try {
+            const res = await fetch('tresty.html?v=' + Date.now());
+            const html = await res.text();
+            const temp = document.createElement('div');
+            temp.innerHTML = html;
+            const container = document.getElementById('lawsContainer');
+            container.innerHTML = "";
+            
+            temp.querySelectorAll('.law-item').forEach((item, lIdx) => {
+                const title = item.getAttribute('data-title');
+                let rows = "";
+                item.querySelectorAll('.sub-line').forEach((line, rIdx) => {
+                    const text = line.innerHTML;
+                    const displayHtml = text.replace(/ODEBRAT Zbrojní Průkaz/g, '<span class="license-danger">ODEBRAT Zbrojní Průkaz</span>')
+                                            .replace(/ODEBRAT Řidičský Průkaz/g, '<span class="license-danger">ODEBRAT Řidičský Průkaz</span>');
 
-                rows += `
-                    <div class="sub-row">
-                        <div class="sub-text">${displayHtml}</div>
-                        <div class="input-group">
-                            <input type="number" class="input-box" id="j_${lIdx}_${rIdx}" 
-                                value="${fixJail !== null ? fixJail : ''}" 
-                                placeholder="Let" 
-                                ${fixJail !== null ? 'readonly' : ''}>
-                            <input type="number" class="input-box" id="f_${lIdx}_${rIdx}" 
-                                value="${fixFine !== null ? fixFine : ''}" 
-                                placeholder="Suma" 
-                                ${fixFine !== null ? 'readonly' : ''}>
-                            <button class="btn-add" onclick="addItem('${title}', ${lIdx}, ${rIdx})">+</button>
-                        </div>
-                    </div>`;
+                    const fixJail = line.getAttribute('data-fix-jail');
+                    const fixFine = line.getAttribute('data-fix-fine');
+
+                    rows += `
+                        <div class="sub-row">
+                            <div class="sub-text">${displayHtml}</div>
+                            <div class="input-group">
+                                <input type="number" class="input-box" id="j_${lIdx}_${rIdx}" 
+                                    value="${fixJail !== null ? fixJail : ''}" 
+                                    placeholder="Let" 
+                                    ${fixJail !== null ? 'readonly' : ''}>
+                                <input type="number" class="input-box" id="f_${lIdx}_${rIdx}" 
+                                    value="${fixFine !== null ? fixFine : ''}" 
+                                    placeholder="Suma" 
+                                    ${fixFine !== null ? 'readonly' : ''}>
+                                <button class="btn-add" onclick="addItem('${title}', ${lIdx}, ${rIdx})">+</button>
+                            </div>
+                        </div>`;
+                });
+                const card = document.createElement('div');
+                card.className = 'law-card';
+                card.innerHTML = `<div class="law-header" onclick="this.parentElement.classList.toggle('active')"><div class="law-title">${title}</div></div><div class="law-content">${rows}</div>`;
+                container.appendChild(card);
             });
-            const card = document.createElement('div');
-            card.className = 'law-card';
-            card.innerHTML = `<div class="law-header" onclick="this.parentElement.classList.toggle('active')"><div class="law-title">${title}</div></div><div class="law-content">${rows}</div>`;
-            container.appendChild(card);
-        });
+        } catch (e) {
+            console.error("Chyba při načítání tresty.html:", e);
+        }
     }
 
     function addItem(title, lIdx, rIdx) {
         const jEl = document.getElementById(`j_${lIdx}_${rIdx}`);
         const fEl = document.getElementById(`f_${lIdx}_${rIdx}`);
-        
         const userJail = jEl.value === "" ? 0 : parseInt(jEl.value);
         const userFine = fEl.value === "" ? 0 : parseInt(fEl.value);
         
         const rowEl = jEl.closest('.sub-row');
-        const formattedHtml = rowEl.querySelector('.sub-text').innerHTML;
         const rawText = rowEl.querySelector('.sub-text').innerText;
+        const formattedHtml = rowEl.querySelector('.sub-text').innerHTML;
+        
+        const cleanText = rawText.replace(/(?<=\d)[\s.](?=\d)/g, '').replace(/[.$]/g, '');
+        const isRange = /od\s+\d+\s+(roku|let|dne|dnů|měsíců).+na\s+\d+/i.test(cleanText);
 
-        // VALIDACE: Spustí se pouze pokud pole NENÍ uzamčené přes data-fix [cite: 2026-03-25]
-        if (!jEl.readOnly) {
-            const rangeMatch = rawText.match(/od\s+(\d+)\s+.*na\s+(\d+)\s+let/i) || rawText.match(/sazba\s+(\d+)-(\d+)\s+let/i) || rawText.match(/(\d+)\s*-\s*(\d+)\s*let/i);
-            if (rangeMatch) {
-                const min = parseInt(rangeMatch[1]);
-                const max = parseInt(rangeMatch[2]);
+        if (userJail > 0) {
+            const jailPart = cleanText.split(/pokut/i)[0];
+            const jailNums = (jailPart.match(/\d+/g) || []).map(Number).filter(n => n < 100);
+            if (jailNums.length > 0) {
+                const max = Math.max(...jailNums);
+                const min = (isRange && jailNums.length >= 2) ? Math.min(...jailNums) : (isRange ? 1 : max);
                 if (userJail < min || userJail > max) {
-                    showNotify("CHYBA V TRESTU ODNĚTÍM SVOBODY UPRAV DÉLKU TRESTU DLE POVOLENÉHO PARAGRAFU !");
+                    showNotify("CHYBA VEZENÍ UPRAV DÉLKU TRESTU DLE POVOLENÉHO PARAGRAFU");
                     return;
                 }
             }
         }
 
-        if (!fEl.readOnly) {
-            const fineMatch = rawText.match(/do\s+výše\s+([\d.]+)/i) || rawText.match(/pokutou\s+([\d.]+)/i);
-            if (fineMatch) {
-                const cleanFine = fineMatch[1].replace(/[.\s]/g, '');
-                const max = parseInt(cleanFine);
-                if (userFine > max) {
-                    showNotify("CHYBA FINANČNÍ ČÁSTKY UPRAV JÍ PODLE PARAGRAFU !");
+        if (userFine > 0) {
+            const finePart = cleanText.includes("pokut") ? cleanText.split(/pokut/i)[1] : cleanText;
+            const fineNums = (finePart.match(/\d+/g) || []).map(Number).filter(n => n >= 50);
+            if (fineNums.length > 0) {
+                const max = Math.max(...fineNums);
+                const min = (isRange && fineNums.length >= 2) ? Math.min(...fineNums) : (cleanText.includes("do výše") ? 50 : max);
+                if (userFine < min || userFine > max) {
+                    showNotify("CHYBA FINANČNÍ ČÁSTKY UPRAV JÍ PODLE PARAGRAFU");
                     return;
                 }
             }
         }
+
+        if (userJail === 0 && userFine === 0) return;
 
         protocolData.push({ title, jail: userJail, fine: userFine, html: formattedHtml });
         render();
@@ -149,32 +279,23 @@
     function render() {
         const cont = document.getElementById('caseEntries');
         cont.innerHTML = "";
-        let tj = 0, tf = 0;
-        let allLics = new Set();
-
+        let tj = 0, tf = 0; let allLics = new Set();
         protocolData.forEach((i, idx) => {
             tj += i.jail; tf += i.fine;
-            if (i.html.includes("Zbrojní Průkaz")) allLics.add("ZBROJNÍ PRŮKAZ");
-            if (i.html.includes("Řidičský Průkaz")) allLics.add("ŘIDIČSKÝ PRŮKAZ");
-
+            if (i.html.toLowerCase().includes("zbrojní průkaz")) allLics.add("ZBROJNÍ PRŮKAZ");
+            if (i.html.toLowerCase().includes("řidičský průkaz")) allLics.add("ŘIDIČSKÝ PRŮKAZ");
             cont.innerHTML += `<div class="case-entry">
                 <button style="position:absolute; right:8px; top:8px; color:red; background:none; border:none; cursor:pointer; font-size:18px;" onclick="removeItem(${idx})">×</button>
-                <div style="color:var(--accent); font-weight:bold; font-size:12px; margin-bottom:3px;">${i.title}</div>
+                <div style="color:var(--accent); font-weight:bold; font-size:12px;">${i.title}</div>
                 <div style="font-size:11px; color:#aaa; line-height:1.4;">${i.html}</div>
-                <div style="margin-top:5px; font-weight:bold; font-size:12px; color:#fff;">
-                    ${i.jail} let | ${i.fine.toLocaleString()} $
-                </div>
+                <div style="margin-top:5px; font-weight:bold; font-size:12px; color:#fff;">${i.jail} let | ${i.fine.toLocaleString()} $</div>
             </div>`;
         });
-
         document.getElementById('sumJail').innerText = tj + " let";
         document.getElementById('sumFine').innerText = tf.toLocaleString() + " $";
-        
         const ga = document.getElementById('globalAlert');
-        if (allLics.size > 0) {
-            ga.style.display = "block";
-            document.getElementById('alertList').innerText = Array.from(allLics).join(" + ");
-        } else { ga.style.display = "none"; }
+        if (allLics.size > 0) { ga.style.display = "block"; document.getElementById('alertList').innerText = Array.from(allLics).join(" + "); }
+        else { ga.style.display = "none"; }
     }
 
     function removeItem(idx) { protocolData.splice(idx, 1); render(); }
@@ -185,7 +306,7 @@
             c.style.display = c.innerText.toLowerCase().includes(v) ? "block" : "none";
         });
     }
-    window.onload = loadLaws;
+    // loadLaws už nevoláme tady, ale až po kliknutí na tlačítko v closeModal() [cite: 2026-03-28]
 </script>
 </body>
 </html>
