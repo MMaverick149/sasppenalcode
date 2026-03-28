@@ -51,9 +51,7 @@
 
         .sub-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #111; }
         .sub-text { flex: 1; font-size: 14px; color: #ccc; padding-right: 15px; }
-        .sub-text b { color: var(--accent); font-weight: bold; }
 
-        /* Styl pro ODEBRAT v seznamu */
         .license-danger {
             background-color: var(--danger);
             color: #fff;
@@ -81,7 +79,6 @@
         .case-entry-title { color: var(--accent); font-weight: bold; font-size: 12px; display: block; }
         .case-entry-sub { color: #fff; font-size: 11px; display: block; margin-top: 2px; }
 
-        /* Červené varování v protokolu */
         .case-alert { color: var(--danger); font-weight: bold; font-size: 10px; text-transform: uppercase; display: block; margin-top: 5px; }
 
         .btn-delete-item { position: absolute; right: 8px; top: 8px; color: #ff4444; cursor: pointer; font-weight: bold; font-size: 18px; background: none; border: none; }
@@ -89,8 +86,20 @@
         .summary-box { border-top: 2px solid var(--accent); padding-top: 15px; margin-top: 10px; }
         .summary-line { display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; margin-bottom: 8px; }
 
-        /* Globální varování dole */
-        #globalAlert { background: rgba(255, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 8px; margin-bottom: 10px; font-size: 12px; font-weight: bold; text-align: center; display: none; }
+        /* GLOBÁLNÍ VAROVÁNÍ */
+        #globalAlert { 
+            background: rgba(255, 68, 68, 0.15); 
+            border: 2px solid var(--danger); 
+            color: #fff; 
+            padding: 10px; 
+            margin-bottom: 15px; 
+            font-size: 13px; 
+            font-weight: bold; 
+            text-align: center; 
+            display: none; 
+            border-radius: 4px;
+        }
+        #alertList { color: var(--danger); text-decoration: underline; }
 
         .btn-clear { width: 100%; background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 10px; cursor: pointer; font-weight: bold; }
         .btn-clear:hover { background: var(--danger); color: #000; }
@@ -106,9 +115,9 @@
 
 <div id="rightPanel">
     <div class="protocol-header">AKTIVNÍ PROTOKOL</div>
+    <div id="globalAlert">⚠ POZOR: <span id="alertList"></span></div>
     <div id="caseEntries"></div>
     <div class="summary-box">
-        <div id="globalAlert">⚠ ZABAVIT: <span id="alertList"></span></div>
         <div class="summary-line">Vězení: <span id="sumJail" style="color:var(--jail)">0 let</span></div>
         <div class="summary-line">Pokuta: <span id="sumFine" style="color:var(--fine)">0 $</span></div>
         <button class="btn-clear" onclick="clearAll()">VYMAZAT PŘÍPAD</button>
@@ -136,8 +145,8 @@
                 const fJ = line.getAttribute('data-fix-jail');
                 
                 let displayHtml = line.innerHTML
-                    .replace("ODEBRAT Zbrojní Průkaz", '<span class="license-danger">ODEBRAT Zbrojní Průkaz</span>')
-                    .replace("ODEBRAT Řidičský Průkaz", '<span class="license-danger">ODEBRAT Řidičský Průkaz</span>');
+                    .replace(/ODEBRAT Zbrojní Průkaz/g, '<span class="license-danger">ODEBRAT Zbrojní Průkaz</span>')
+                    .replace(/ODEBRAT Řidičský Průkaz/g, '<span class="license-danger">ODEBRAT Řidičský Průkaz</span>');
 
                 rows += `
                     <div class="sub-row">
@@ -166,15 +175,14 @@
         const fine = parseInt(fVal) || 0;
         
         const rowElement = document.getElementById(`j_${lIdx}_${rIdx}`).closest('.sub-row');
-        const originalText = rowElement.querySelector('.sub-text').innerText;
+        const fullText = rowElement.querySelector('.sub-text').innerText;
         
         let licenses = [];
-        if (originalText.includes("Zbrojní Průkaz")) licenses.push("ZBROJNÍ PRŮKAZ");
-        if (originalText.includes("Řidičský Průkaz")) licenses.push("ŘIDIČSKÝ PRŮKAZ");
+        // Detekce klíčových slov v textu pro aktivaci varování
+        if (fullText.toLowerCase().includes("zbrojní")) licenses.push("ZBROJNÍ PRŮKAZ");
+        if (fullText.toLowerCase().includes("řidičský")) licenses.push("ŘIDIČSKÝ PRŮKAZ");
 
-        const cleanText = originalText.replace("ODEBRAT Zbrojní Průkaz", "").replace("ODEBRAT Řidičský Průkaz", "").trim();
-
-        protocolData.push({ title, fullText: cleanText, jail, fine, licenses });
+        protocolData.push({ title, fullText, jail, fine, licenses });
         render();
     }
 
@@ -188,7 +196,7 @@
             tj += i.jail; tf += i.fine;
             i.licenses.forEach(l => allLicenses.add(l));
 
-            let licenseAlerts = i.licenses.map(l => `<span class="case-alert">⚠ ODEBRAT ${l}</span>`).join("");
+            let licenseAlerts = i.licenses.map(l => `<span class="case-alert">⚠ ZABAVIT ${l}</span>`).join("");
 
             cont.innerHTML += `
                 <div class="case-entry">
@@ -208,7 +216,7 @@
         const globalAlert = document.getElementById('globalAlert');
         if (allLicenses.size > 0) {
             globalAlert.style.display = "block";
-            document.getElementById('alertList').innerText = Array.from(allLicenses).join(", ");
+            document.getElementById('alertList').innerText = Array.from(allLicenses).join(" + ");
         } else {
             globalAlert.style.display = "none";
         }
