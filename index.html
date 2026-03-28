@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP - Penal Code</title>
+    <title>Policejní Kalkulačka - Final</title>
     <style>
         :root {
             --bg: #000000;
@@ -77,7 +77,6 @@
         .sub-text { flex: 1; font-size: 14px; color: #ccc; padding-right: 15px; }
         .sub-text b { color: var(--accent); font-weight: bold; }
 
-        /* ODEBRAT PRŮKAZ - Bílý text, červené pozadí */
         .license-danger {
             background-color: var(--danger);
             color: #fff;
@@ -144,12 +143,13 @@
             width: 100%; background: transparent; border: 1px solid var(--danger);
             color: var(--danger); padding: 10px; cursor: pointer; font-weight: bold; margin-top: 10px;
         }
+        .btn-clear:hover { background: var(--danger); color: #000; }
     </style>
 </head>
 <body>
 
 <div id="leftPanel">
-    <div class="main-header">Trestní zákoník - San Andreas</div>
+    <div class="main-header">POLICAJNÍ DATABAZE - PENAL CODE - GenK</div>
     <input type="text" id="searchInput" placeholder="Vyhledat paragraf..." oninput="doSearch()">
     <div id="lawsContainer"></div>
 </div>
@@ -184,7 +184,6 @@
                 const fF = line.getAttribute('data-fix-fine');
                 const fJ = line.getAttribute('data-fix-jail');
                 
-                // Formátování textu v seznamu
                 let displayHtml = line.innerHTML.replace("ODEBRAT Zbrojní Průkaz", '<span class="license-danger">ODEBRAT Zbrojní Průkaz</span>');
 
                 rows += `
@@ -214,16 +213,11 @@
         const jVal = document.getElementById(`j_${lIdx}_${rIdx}`).value;
         const fVal = document.getElementById(`f_${lIdx}_${rIdx}`).value;
         
-        // Blokace přidání prázdného trestu (pokud nejsou zadány roky ani suma)
-        if (!jVal && !fVal) {
-            alert("Musíš zadat aspoň roky nebo pokutu!");
-            return;
-        }
+        if (!jVal && !fVal) return;
 
         const jail = parseInt(jVal) || 0;
         const fine = parseInt(fVal) || 0;
         
-        // Získání celého textu bodu pro protokol
         const rowElement = document.getElementById(`j_${lIdx}_${rIdx}`).closest('.sub-row');
         const fullText = rowElement.querySelector('.sub-text').innerText.replace("ODEBRAT Zbrojní Průkaz", "").trim();
 
@@ -259,11 +253,10 @@
         render();
     }
 
+    // TEĎ MAŽE OKAMŽITĚ BEZ PTANÍ
     function clearAll() {
-        if(confirm("Opravdu vymazat celý protokol?")) {
-            protocolData = [];
-            render();
-        }
+        protocolData = [];
+        render();
     }
 
     function doSearch() {
@@ -275,6 +268,5 @@
 
     window.onload = loadLaws;
 </script>
-
 </body>
 </html>
