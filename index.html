@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - TERMINÁL v92</title>
+    <title>SASP MDT - Penal Code System</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #14161a;
@@ -11,8 +11,7 @@
         }
 
         body { background: var(--bg-main); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        b, strong, .bold-yellow { color: var(--accent); font-weight: bold; }
-
+        
         /* Panely */
         #leftPanel { flex: 3; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
         #rightPanel { flex: 1.2; min-width: 420px; background: var(--bg-panel); display: flex; flex-direction: column; }
@@ -27,49 +26,35 @@
         .row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #1a1c20; }
 
         /* Inputy */
-        .input-box { background: #000; border: 1px solid var(--border); color: #fff; padding: 8px; width: 85px; text-align: center; border-radius: 4px; font-weight: bold; outline: none; transition: 0.2s; }
-        .input-jail { border-color: var(--jail); }
-        .input-fine { border-color: var(--fine); }
+        .input-box { background: #000; border: 1px solid var(--border); color: #fff; padding: 8px; width: 85px; text-align: center; border-radius: 4px; font-weight: bold; outline: none; }
+        
+        /* BLOKOVANÉ POLE - ČERVENÉ */
+        .input-box:disabled, .input-box[readonly] { 
+            border-color: var(--danger) !important; 
+            color: var(--danger) !important;
+            background: rgba(255, 68, 68, 0.05) !important;
+            cursor: not-allowed;
+            opacity: 1; /* Aby byl text dobře vidět i při disabled */
+        }
 
         /* Protokol */
         .protocol-item { background: #000; padding: 15px; border-radius: 8px; border-left: 4px solid var(--jail); margin: 10px; position: relative; border: 1px solid var(--border); }
         .proto-inputs { display: flex; gap: 15px; margin-top: 10px; }
         
-        /* VAROVÁNÍ V PROTOKOLU - ČERVENÉ */
         .lic-alert-item {
-            color: var(--danger);
-            background: rgba(255, 68, 68, 0.1);
-            border: 1px solid var(--danger);
-            padding: 5px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 900;
-            margin-top: 10px;
-            text-align: center;
-            text-transform: uppercase;
+            color: var(--danger); background: rgba(255, 68, 68, 0.1); border: 1px solid var(--danger);
+            padding: 5px; border-radius: 4px; font-size: 11px; font-weight: 900; margin-top: 10px;
+            text-align: center; text-transform: uppercase;
         }
 
-        /* PULZUJÍCÍ VAROVÁNÍ NAD CELKEM */
         #licenseWarning {
-            background: var(--danger);
-            color: white;
-            padding: 12px;
-            border-radius: 4px;
-            font-weight: 900;
-            text-align: center;
-            margin: 10px;
-            display: none;
-            animation: pulse-red 0.8s infinite alternate;
-            box-shadow: 0 0 15px rgba(255, 68, 68, 0.6);
-            font-size: 14px;
+            background: var(--danger); color: white; padding: 12px; border-radius: 4px; font-weight: 900;
+            text-align: center; margin: 10px; display: none;
+            animation: pulse-red 0.8s infinite alternate; font-size: 14px;
         }
 
-        @keyframes pulse-red {
-            from { opacity: 1; transform: scale(1); }
-            to { opacity: 0.7; transform: scale(1.02); }
-        }
+        @keyframes pulse-red { from { opacity: 1; transform: scale(1); } to { opacity: 0.7; transform: scale(1.02); } }
 
-        /* VELKÉ VAROVÁNÍ PŘI PŘIDÁNÍ */
         #customAlert {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(255, 0, 0, 0.95); color: white; padding: 40px 80px;
@@ -132,11 +117,12 @@
                     const fixJ = line.getAttribute('data-fix-jail');
                     const fixF = line.getAttribute('data-fix-fine');
                     
-                    const jailMatch = text.match(/(?:sazba|od|do|až)\s+(\d+)(?:\s*-\s*(\d+))?\s*let/i);
-                    const fineMatch = text.match(/(?:pokutou|výši|do|až|sazba)\s+([\d.]+)\s*\$/i);
-
-                    let maxJ = jailMatch ? (jailMatch[2] ? parseInt(jailMatch[2]) : parseInt(jailMatch[1])) : 999;
-                    let maxF = fineMatch ? parseInt(fineMatch[1].replace(/\./g, '')) : 0;
+                    // OPRAVA DETEKCE LIMITU: Najde všechna čísla v textu a vezme to největší jako limit
+                    const jailNumbers = text.match(/\d+(?=\s*let)/gi);
+                    let maxJ = jailNumbers ? Math.max(...jailNumbers.map(Number)) : 999;
+                    
+                    const fineNumbers = text.match(/[\d.]+(?=\s*\$)/gi);
+                    let maxF = fineNumbers ? Math.max(...fineNumbers.map(n => parseInt(n.replace(/\./g, '')))) : 0;
 
                     return {
                         html: line.innerHTML,
@@ -168,8 +154,8 @@
                     ${law.subs.map((sub, sIdx) => `
                         <div class="row">
                             <div style="flex:1; font-size:12px;">${sub.html}</div>
-                            <input type="number" class="input-box input-jail" id="j_${lIdx}_${sIdx}" value="${sub.valJ}" placeholder="Let" ${sub.isFixJ ? 'disabled' : ''}>
-                            <input type="number" class="input-box input-fine" id="f_${lIdx}_${sIdx}" value="${sub.valF}" placeholder="$" ${sub.isFixF ? 'disabled' : ''}>
+                            <input type="number" class="input-box" id="j_${lIdx}_${sIdx}" value="${sub.valJ}" placeholder="Let" ${sub.isFixJ ? 'disabled value="Blokován"' : ''}>
+                            <input type="number" class="input-box" id="f_${lIdx}_${sIdx}" value="${sub.valF}" placeholder="$" ${sub.isFixF ? 'disabled value="Blokován"' : ''}>
                             <button onclick="add(${lIdx}, ${sIdx})" style="background:var(--accent); border:none; padding:8px 12px; border-radius:4px; font-weight:900; cursor:pointer;">+</button>
                         </div>
                     `).join('')}
@@ -180,8 +166,11 @@
 
     function add(lIdx, sIdx) {
         const sub = laws[lIdx].subs[sIdx];
-        let jail = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
-        let fine = parseInt(document.getElementById(`f_${lIdx}_${sIdx}`).value) || 0;
+        let jailInput = document.getElementById(`j_${lIdx}_${sIdx}`);
+        let fineInput = document.getElementById(`f_${lIdx}_${sIdx}`);
+        
+        let jail = parseInt(jailInput.value) || 0;
+        let fine = parseInt(fineInput.value) || 0;
 
         if (!sub.isFixJ && jail > sub.limitJ) { showAlert(`NEPŘIDÁNO: Max ${sub.limitJ} let!`); return; }
         if (!sub.isFixF && sub.limitF > 0 && fine > sub.limitF) { showAlert(`NEPŘIDÁNO: Max $${sub.limitF.toLocaleString()}!`); return; }
@@ -217,7 +206,7 @@
                     <div>
                         <span style="font-size:10px; color:var(--fine)">POKUTA</span><br>
                         <input type="number" class="input-box" value="${p.fine}" 
-                            ${p.isFixF ? 'readonly' : ''} onchange="edit(${idx}, 'fine', this.value)">
+                            ${p.isFixF ? 'readonly' : ''} onchange="edit(${idx}, 'fine', this.value) || 0">
                     </div>
                 </div>
                 ${p.lic ? '<div class="lic-alert-item">⚠ ODEBRAT ZBROJNÍ PRŮKAZ</div>' : ''}
@@ -225,9 +214,7 @@
             </div>
         `).join('');
 
-        // Zobrazení pulzujícího varování nad celkem
         document.getElementById('licenseWarning').style.display = protocol.some(p => p.lic) ? 'block' : 'none';
-        
         document.getElementById('sumJail').innerText = protocol.reduce((a, b) => a + b.jail, 0);
         document.getElementById('sumFine').innerText = protocol.reduce((a, b) => a + b.fine, 0).toLocaleString();
     }
