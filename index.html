@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>Policejní Kalkulačka v19 - Black Edition</title>
+    <title>SASP - Penal Code</title>
     <style>
         :root {
             --bg: #000000; /* Čistě černé pozadí */
@@ -135,7 +135,7 @@
     <div id="notification"></div>
 
     <div id="leftPanel">
-        <div class="main-header">POLICAJNÍ DATABÁZE - GEN TRN</div>
+        <div class="main-header">POLICAJNÍ DATABAZE - PENAL CODE - GenK</div>
         <input type="text" id="searchInput" placeholder="Vyhledat paragraf..." oninput="doSearch()">
         <div id="lawsContainer"></div>
     </div>
@@ -233,7 +233,7 @@
             if (jailNums.length > 0) {
                 const max = Math.max(...jailNums);
                 const min = (isRange && jailNums.length >= 2) ? Math.min(...jailNums) : (isRange ? 1 : max);
-                if (userJail < min || userJail > max) { showNotify("CHYBA VEZENÍ UPRAV DÉLKU TRESTU DLE POVOLENÉHO PARAGRAFU"); return; }
+                if (userJail < min || userJail > max) { showNotify("CHYBA V TRESTU ODNĚTÍM SVOBODY UPRAV DÉLKU TRESTU DLE POVOLENÉHO PARAGRAFU"); return; }
             }
         }
 
@@ -243,7 +243,7 @@
             if (fineNums.length > 0) {
                 const max = Math.max(...fineNums);
                 const min = (isRange && fineNums.length >= 2) ? Math.min(...fineNums) : (cleanText.includes("do výše") ? 50 : max);
-                if (userFine < min || userFine > max) { showNotify("CHYBA FINANČNÍ ČÁSTKY UPRAV JÍ PODLE PARAGRAFU"); return; }
+                if (userFine < min || userFine > max) { showNotify("CHYBA FINANČNÍ ČÁSTKY UPRAV JÍ PODLE PARAGRAFU !"); return; }
             }
         }
 
