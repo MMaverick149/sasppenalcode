@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP - Penal Code v24</title>
+    <title>SASP - Penal Code v25</title>
     <style>
         :root {
             --bg: #000; --card: #0c0c0c; --accent: #ffcc00; --border: #1a1a1a;
@@ -115,31 +115,31 @@
         const rawText = rowEl.querySelector('.sub-text').innerText;
         const formattedHtml = rowEl.querySelector('.sub-text').innerHTML;
 
-        // --- CHYTRÁ VALIDACE ---
-        // Vyčistíme text od teček v tisících (např. 5.000 -> 5000)
+        // --- UNIVERZÁLNÍ VALIDACE ---
+        // Odstraníme tečky v tisících pro správné čtení čísel
         const cleanText = rawText.replace(/(?<=\d)\.(?=\d)/g, '');
+        // Najdeme všechna čísla v textu
+        const allNumbers = (cleanText.match(/\d+/g) || []).map(Number);
 
-        // Kontrola POKUTY
-        if (!fEl.readOnly && userFine > 0) {
-            // Najdeme všechna čísla, která vypadají jako peníze (50 a více)
-            const fineNumbers = (cleanText.match(/\d+/g) || []).map(Number).filter(n => n >= 50);
-            if (fineNumbers.length > 0) {
-                const maxAllowedFine = Math.max(...fineNumbers);
-                if (userFine > maxAllowedFine) {
-                    showNotify("CHYBA FINANČNÍ ČÁSTKY! MAXIMÁLNÍ POVOLENÁ POKUTA JE " + maxAllowedFine.toLocaleString() + " $");
+        // 1. KONTROLA VĚZENÍ (čísla obvykle do 99 let)
+        if (!jEl.readOnly && userJail > 0) {
+            const jailLimits = allNumbers.filter(n => n > 0 && n < 100);
+            if (jailLimits.length > 0) {
+                const maxJail = Math.max(...jailLimits);
+                if (userJail > maxJail) {
+                    showNotify("CHYBA! MAXIMÁLNÍ TREST DLE PARAGRAFU JE " + maxJail + " LET.");
                     return;
                 }
             }
         }
 
-        // Kontrola VĚZENÍ
-        if (!jEl.readOnly && userJail > 0) {
-            // Najdeme všechna malá čísla (lety jsou obvykle do 50-99)
-            const jailNumbers = (cleanText.match(/\d+/g) || []).map(Number).filter(n => n > 0 && n < 50);
-            if (jailNumbers.length > 0) {
-                const maxAllowedJail = Math.max(...jailNumbers);
-                if (userJail > maxAllowedJail) {
-                    showNotify("CHYBA DÉLKY TRESTU! MAXIMÁLNÍ POVOLENÁ DOBA JE " + maxAllowedJail + " LET");
+        // 2. KONTROLA POKUTY (čísla od 100 výše)
+        if (!fEl.readOnly && userFine > 0) {
+            const fineLimits = allNumbers.filter(n => n >= 100);
+            if (fineLimits.length > 0) {
+                const maxFine = Math.max(...fineLimits);
+                if (userFine > maxFine) {
+                    showNotify("CHYBA! MAXIMÁLNÍ POKUTA DLE PARAGRAFU JE " + maxFine.toLocaleString() + " $.");
                     return;
                 }
             }
