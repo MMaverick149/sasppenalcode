@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - TERMINÁL v94</title>
+    <title>SASP MDT - TERMINÁL v95</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #14161a;
@@ -12,7 +12,6 @@
 
         body { background: var(--bg-main); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        /* OPRAVA: Tučné písmo v zákoníku bude žluté */
         #lawsContainer b, #lawsContainer strong { color: var(--accent) !important; font-weight: bold; }
 
         #leftPanel { flex: 3; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
@@ -28,7 +27,6 @@
 
         .input-box { background: #000; border: 1px solid var(--border); color: #fff; padding: 8px; width: 85px; text-align: center; border-radius: 4px; font-weight: bold; outline: none; }
         
-        /* BLOKOVANÉ POLE - ČERVENÉ */
         .input-box:disabled, .input-box[readonly] { 
             border-color: var(--danger) !important; 
             color: var(--danger) !important;
@@ -57,7 +55,7 @@
         #customAlert {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(255, 0, 0, 0.95); color: white; padding: 40px 80px;
-            border-radius: 15px; font-size: 28px; font-weight: 900; z-index: 10000;
+            border-radius: 15px; font-size: 24px; font-weight: 900; z-index: 10000;
             display: none; text-align: center; border: 4px solid white;
         }
 
@@ -66,7 +64,7 @@
 </head>
 <body>
 
-<div id="customAlert">⚠️ PŘEKROČEN LIMIT!</div>
+<div id="customAlert">⚠️ CHYBA!</div>
 
 <div id="leftPanel">
     <div class="header-bar">
@@ -99,7 +97,7 @@
         const el = document.getElementById('customAlert');
         el.innerText = "⚠️ " + msg;
         el.style.display = 'block';
-        setTimeout(() => { el.style.display = 'none'; }, 2500);
+        setTimeout(() => { el.style.display = 'none'; }, 3000);
     }
 
     async function load() {
@@ -116,21 +114,24 @@
                     const fixJ = line.getAttribute('data-fix-jail');
                     const fixF = line.getAttribute('data-fix-fine');
                     
-                    // OPRAVA DETEKCE: Hledáme čísla pouze v kontextu trestů, ne u výše škody
-                    // Hledá čísla v okolí slov "sazba", "od", "do" následovaných "let"
-                    const jailMatch = text.match(/(?:sazba|od|do|až)\s*([\d\s-]+)\s*let/gi);
-                    let maxJ = 999;
+                    // --- LOGIKA PRO ROZMEZÍ ---
+                    let minJ = 0, maxJ = 999;
+                    let minF = 0, maxF = 0;
+
+                    // Detekce Let (např. "10-20 let", "od 5 let do 15 let")
+                    const jailMatch = text.match(/(?:sazba|od|do|až|v rozmezí)\s*([\d\s-]+)\s*let/gi);
                     if (jailMatch) {
-                        const nums = jailMatch.join(' ').match(/\d+/g);
-                        if (nums) maxJ = Math.max(...nums.map(Number));
+                        const nums = jailMatch.join(' ').match(/\d+/g).map(Number);
+                        if (nums.length >= 2) { minJ = nums[0]; maxJ = nums[1]; } 
+                        else if (nums.length === 1) { maxJ = nums[0]; }
                     }
                     
-                    // Hledá čísla v okolí slov "pokutou", "výši", "do" následovaných "$"
-                    const fineMatch = text.match(/(?:pokutou|výši|do|až)\s*([\d.\s-]+)\s*\$/gi);
-                    let maxF = 0;
+                    // Detekce Pokuty (např. "5.000 $ - 15.000 $", "do 5.000 $")
+                    const fineMatch = text.match(/(?:pokutou|výši|od|do|až|v rozmezí)\s*([\d.\s-]+)\s*\$/gi);
                     if (fineMatch) {
-                        const nums = fineMatch.join(' ').replace(/\./g, '').match(/\d+/g);
-                        if (nums) maxF = Math.max(...nums.map(Number));
+                        const nums = fineMatch.join(' ').replace(/\./g, '').match(/\d+/g).map(Number);
+                        if (nums.length >= 2) { minF = nums[0]; maxF = nums[1]; } 
+                        else if (nums.length === 1) { maxF = nums[0]; }
                     }
 
                     return {
@@ -141,8 +142,7 @@
                         valF: fixF || "",
                         isFixJ: fixJ !== null,
                         isFixF: fixF !== null,
-                        limitJ: maxJ,
-                        limitF: maxF,
+                        minJ, maxJ, minF, maxF,
                         lic: text.includes("ODEBRAT")
                     };
                 })
@@ -175,26 +175,30 @@
 
     function add(lIdx, sIdx) {
         const sub = laws[lIdx].subs[sIdx];
-        let jailInput = document.getElementById(`j_${lIdx}_${sIdx}`);
-        let fineInput = document.getElementById(`f_${lIdx}_${sIdx}`);
-        
-        let jail = parseInt(jailInput.value) || 0;
-        let fine = parseInt(fineInput.value) || 0;
+        let jail = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
+        let fine = parseInt(document.getElementById(`f_${lIdx}_${sIdx}`).value) || 0;
 
-        if (!sub.isFixJ && jail > sub.limitJ) { showAlert(`NEPŘIDÁNO: Max ${sub.limitJ} let!`); return; }
-        if (!sub.isFixF && sub.limitF > 0 && fine > sub.limitF) { showAlert(`NEPŘIDÁNO: Max $${sub.limitF.toLocaleString()}!`); return; }
+        // Kontrola rozmezí Let
+        if (!sub.isFixJ) {
+            if (jail < sub.minJ) { showAlert(`MINIMUM JE ${sub.minJ} LET!`); return; }
+            if (jail > sub.maxJ) { showAlert(`MAXIMUM JE ${sub.maxJ} LET!`); return; }
+        }
+
+        // Kontrola rozmezí Pokuty
+        if (!sub.isFixF && sub.maxF > 0) {
+            if (fine < sub.minF) { showAlert(`MINIMUM JE $${sub.minF.toLocaleString()}!`); return; }
+            if (fine > sub.maxF) { showAlert(`MAXIMUM JE $${sub.maxF.toLocaleString()}!`); return; }
+        }
 
         protocol.push({
             id: Date.now(),
             title: laws[lIdx].title,
             letter: sub.letter,
             fullText: sub.fullText,
-            jail: jail,
-            fine: fine,
-            maxJ: sub.limitJ,
-            maxF: sub.limitF,
-            isFixJ: sub.isFixJ,
-            isFixF: sub.isFixF,
+            jail, fine,
+            minJ: sub.minJ, maxJ: sub.maxJ,
+            minF: sub.minF, maxF: sub.maxF,
+            isFixJ: sub.isFixJ, isFixF: sub.isFixF,
             lic: sub.lic
         });
         updateProtocol();
@@ -215,7 +219,7 @@
                     <div>
                         <span style="font-size:10px; color:var(--fine)">POKUTA</span><br>
                         <input type="number" class="input-box" value="${p.fine}" 
-                            ${p.isFixF ? 'readonly' : ''} onchange="edit(${idx}, 'fine', this.value) || 0">
+                            ${p.isFixF ? 'readonly' : ''} onchange="edit(${idx}, 'fine', this.value)">
                     </div>
                 </div>
                 ${p.lic ? '<div class="lic-alert-item">⚠ ODEBRAT ZBROJNÍ PRŮKAZ</div>' : ''}
@@ -231,14 +235,22 @@
     function edit(idx, type, val) {
         let v = parseInt(val) || 0;
         const p = protocol[idx];
-        if (type === 'jail' && !p.isFixJ && v > p.maxJ) v = p.maxJ;
-        if (type === 'fine' && !p.isFixF && p.maxF > 0 && v > p.maxF) v = p.maxF;
+        
+        if (type === 'jail' && !p.isFixJ) {
+            if (v < p.minJ) v = p.minJ;
+            if (v > p.maxJ) v = p.maxJ;
+        }
+        if (type === 'fine' && !p.isFixF && p.maxF > 0) {
+            if (v < p.minF) v = p.minF;
+            if (v > p.maxF) v = p.maxF;
+        }
+        
         protocol[idx][type] = v;
         updateProtocol();
     }
 
     function remove(id) { protocol = protocol.filter(x => x.id !== id); updateProtocol(); }
-    function save() { alert("Uloženo."); protocol = []; updateProtocol(); }
+    function save() { alert("Protokol uložen do databáze."); protocol = []; updateProtocol(); }
 
     load();
 </script>
