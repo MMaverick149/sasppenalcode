@@ -7,10 +7,10 @@
         :root {
             --bg-main: #0a0b0d;
             --bg-panel: #14161a;
-            --accent: #ffcc00;
+            --accent: #ffcc00; /* ŽLUTÁ */
             --danger: #ff4444;
-            --jail-color: #00ff88;  /* ZELENÁ PRO ROKY */
-            --fine-color: #00aaff;  /* MODRÁ PRO POKUTY */
+            --jail-color: #00aaff;  /* MODRÁ PRO ROKY */
+            --fine-color: #00ff88;  /* ZELENÁ PRO POKUTY */
             --text-dim: #9aa0a6;
             --border: #202124;
         }
@@ -23,6 +23,11 @@
             display: flex;
             height: 100vh;
             overflow: hidden;
+        }
+
+        /* GLOBÁLNÍ NASTAVENÍ PRO TUČNÉ PÍSMO */
+        b, strong {
+            color: var(--accent) !important;
         }
 
         /* UVÍTACÍ MODAL */
@@ -87,9 +92,11 @@
         
         .input-box::placeholder { opacity: 0.3; color: inherit; }
         
+        /* BLOKOVANÉ SAZBY JSOU ZELENÉ */
         .input-box[readonly] { 
-            background: rgba(255, 255, 255, 0.03); border-color: #333 !important; color: #555 !important; cursor: not-allowed; 
+            background: rgba(0, 255, 136, 0.05); border-color: var(--fine-color) !important; color: var(--fine-color) !important; cursor: not-allowed; 
         }
+
         .btn-add {
             background: var(--accent); border: none; color: #000; padding: 0 15px;
             font-weight: 900; cursor: pointer; border-radius: 6px;
@@ -105,7 +112,7 @@
         .edit-fine { border: 1px solid var(--fine-color) !important; color: var(--fine-color) !important; width: 85px !important; padding: 5px !important; font-weight: bold; background: #000; }
 
         .edit-jail[readonly], .edit-fine[readonly] {
-            border-color: #333 !important; color: #555 !important; background: rgba(255,255,255,0.02) !important; cursor: not-allowed !important;
+            border-color: var(--fine-color) !important; color: var(--fine-color) !important; background: rgba(0, 255, 136, 0.02) !important; cursor: not-allowed !important;
         }
 
         /* SUMÁŘ */
@@ -126,7 +133,25 @@
         .dev-label { color: #555; font-weight: bold; }
         .dev-value.highlight { color: var(--accent); font-weight: bold; }
 
-        #notification { position: fixed; top: 40px; left: 50%; transform: translateX(-50%); background: var(--danger); color: white; padding: 20px 40px; border-radius: 8px; font-weight: 800; z-index: 999999; display: none; text-transform: uppercase; }
+        /* NOTIFIKACE DOPROSTŘED */
+        #notification { 
+            position: fixed; 
+            top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); 
+            background: rgba(255, 68, 68, 0.95); 
+            color: white; 
+            padding: 30px 60px; 
+            border-radius: 12px; 
+            font-size: 20px;
+            font-weight: 900; 
+            z-index: 999999; 
+            display: none; 
+            text-transform: uppercase; 
+            box-shadow: 0 0 100px rgba(0,0,0,0.8);
+            border: 2px solid #fff;
+            text-align: center;
+        }
+
         #globalAlert { background: rgba(255, 68, 68, 0.1); border: 1px dashed var(--danger); color: var(--danger); padding: 12px; border-radius: 6px; margin-bottom: 15px; font-weight: 800; text-align: center; display: none; font-size: 12px; }
     </style>
 </head>
@@ -187,6 +212,9 @@
             item.querySelectorAll('.sub-line').forEach((line, rIdx) => {
                 const fixJail = line.getAttribute('data-fix-jail');
                 const fixFine = line.getAttribute('data-fix-fine');
+                
+                // Formátování textu: vše co bylo v HTML tučné bude žluté, 
+                // přidáváme automatické zvýraznění důležitých pojmů
                 let text = line.innerHTML
                     .replace(/ODEBRAT Zbrojní Průkaz/g, '<span class="license-danger">ODEBRAT Zbrojní Průkaz</span>')
                     .replace(/ODEBRAT Řidičský Průkaz/g, '<span class="license-danger">ODEBRAT Řidičský Průkaz</span>');
@@ -228,19 +256,20 @@
         const rowEl = jEl.closest('.sub-row');
         const formattedHtml = rowEl.querySelector('.sub-text').innerHTML;
 
+        // Kontrola limitů
         let boldNumbers = (formattedHtml.replace(/(?<=\d)\.(?=\d)/g, '').match(/\d+/g) || []).map(Number);
         if (!fEl.readOnly && userFine > 0) {
             const fineLimits = boldNumbers.filter(n => n >= 100);
             if (fineLimits.length >= 2) {
                 const minF = Math.min(...fineLimits); const maxF = Math.max(...fineLimits);
-                if (userFine < minF || userFine > maxF) { showNotify(`CHYBA: ${userFine}$ je mimo rozmezí`); return; }
+                if (userFine < minF || userFine > maxF) { showNotify(`CHYBA: ${userFine}$ je mimo rozmezí, uprav to dle daného praragrafu !`); return; }
             }
         }
         if (!jEl.readOnly && userJail > 0) {
             const jailLimits = boldNumbers.filter(n => n > 0 && n < 100);
             if (jailLimits.length >= 2) {
                 const minJ = Math.min(...jailLimits); const maxJ = Math.max(...jailLimits);
-                if (userJail < minJ || userJail > maxJ) { showNotify(`CHYBA: ${userJail} let je mimo rozmezí`); return; }
+                if (userJail < minJ || userJail > maxJ) { showNotify(`CHYBA: ${userJail} let je mimo rozmezí, uprav to dle daného praragrafu !`); return; }
             }
         }
 
