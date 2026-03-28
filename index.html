@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>Policejní Kalkulačka - Final</title>
+    <title>SASP - Penal Code</title>
     <style>
         :root {
             --bg: #000000;
@@ -90,9 +90,23 @@
         }
 
         .input-group { display: flex; gap: 8px; }
+        
         .input-box {
-            background: #000; border: 1px solid #333; color: #fff;
-            padding: 8px; width: 65px; text-align: center; border-radius: 4px;
+            background: #000;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 8px;
+            width: 65px;
+            text-align: center;
+            border-radius: 4px;
+        }
+
+        /* Styl pro uzamčená pole */
+        .input-box[readonly] {
+            background: #0a0a0a;
+            color: #888;
+            border: 1px solid #111;
+            cursor: not-allowed;
         }
 
         .btn-add {
@@ -155,7 +169,7 @@
 </div>
 
 <div id="rightPanel">
-    <div class="protocol-header">PROTOKOL</div>
+    <div class="protocol-header">AKTIVNÍ PROTOKOL</div>
     <div id="caseEntries"></div>
     <div class="summary-box">
         <div class="summary-line">Vězení: <span id="sumJail" style="color:var(--jail)">0 let</span></div>
@@ -184,14 +198,19 @@
                 const fF = line.getAttribute('data-fix-fine');
                 const fJ = line.getAttribute('data-fix-jail');
                 
+                // Formátování textu a nahrazení průkazu
                 let displayHtml = line.innerHTML.replace("ODEBRAT Zbrojní Průkaz", '<span class="license-danger">ODEBRAT Zbrojní Průkaz</span>');
 
                 rows += `
                     <div class="sub-row">
                         <div class="sub-text">${displayHtml}</div>
                         <div class="input-group">
-                            <input type="number" class="input-box" id="j_${lIdx}_${rIdx}" value="${fJ || ''}" placeholder="Let" onclick="event.stopPropagation()">
-                            <input type="number" class="input-box" id="f_${lIdx}_${rIdx}" value="${fF || ''}" placeholder="Suma" onclick="event.stopPropagation()">
+                            <input type="number" class="input-box" id="j_${lIdx}_${rIdx}" 
+                                value="${fJ || ''}" placeholder="Let" 
+                                onclick="event.stopPropagation()" ${fJ !== null ? 'readonly' : ''}>
+                            <input type="number" class="input-box" id="f_${lIdx}_${rIdx}" 
+                                value="${fF || ''}" placeholder="Suma" 
+                                onclick="event.stopPropagation()" ${fF !== null ? 'readonly' : ''}>
                             <button class="btn-add" onclick="event.stopPropagation(); addItem('${title}', ${lIdx}, ${rIdx})">+</button>
                         </div>
                     </div>`;
@@ -219,6 +238,7 @@
         const fine = parseInt(fVal) || 0;
         
         const rowElement = document.getElementById(`j_${lIdx}_${rIdx}`).closest('.sub-row');
+        // Získání celého textu (včetně podbodu) pro protokol
         const fullText = rowElement.querySelector('.sub-text').innerText.replace("ODEBRAT Zbrojní Průkaz", "").trim();
 
         protocolData.push({ title, fullText, jail, fine });
@@ -253,7 +273,6 @@
         render();
     }
 
-    // TEĎ MAŽE OKAMŽITĚ BEZ PTANÍ
     function clearAll() {
         protocolData = [];
         render();
