@@ -86,26 +86,28 @@
         .summary-box { border-top: 2px solid var(--accent); padding-top: 15px; margin-top: 10px; }
         .summary-line { display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; margin-bottom: 8px; }
 
-        /* GLOBÁLNÍ VAROVÁNÍ */
-        #globalAlert { 
-            background: rgba(255, 68, 68, 0.15); 
-            border: 2px solid var(--danger); 
-            color: #fff; 
-            padding: 10px; 
-            margin-bottom: 15px; 
-            font-size: 13px; 
-            font-weight: bold; 
-            text-align: center; 
-            display: none; 
-            border-radius: 4px;
+        /* NOTIFIKACE - CHYBA */
+        #notification {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: var(--danger); color: white; padding: 15px 30px; 
+            border-radius: 8px; font-weight: bold; z-index: 9999;
+            display: none; box-shadow: 0 0 20px rgba(255, 68, 68, 0.4);
+            border: 2px solid white; text-transform: uppercase;
         }
-        #alertList { color: var(--danger); text-decoration: underline; }
+
+        #globalAlert { 
+            background: rgba(255, 68, 68, 0.15); border: 2px solid var(--danger); 
+            color: #fff; padding: 10px; margin-bottom: 15px; font-size: 13px; 
+            font-weight: bold; text-align: center; display: none; border-radius: 4px;
+        }
 
         .btn-clear { width: 100%; background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 10px; cursor: pointer; font-weight: bold; }
         .btn-clear:hover { background: var(--danger); color: #000; }
     </style>
 </head>
 <body>
+
+<div id="notification"></div>
 
 <div id="leftPanel">
     <div class="main-header">POLICAJNÍ DATABAZE - PENAL CODE - GenK</div>
@@ -126,6 +128,12 @@
 
 <script>
     let protocolData = [];
+
+    function showNotify(msg) {
+        const n = document.getElementById('notification');
+        n.innerText = msg; n.style.display = 'block';
+        setTimeout(() => { n.style.display = 'none'; }, 3000);
+    }
 
     async function loadLaws() {
         const container = document.getElementById('lawsContainer');
@@ -167,18 +175,32 @@
     }
 
     function addItem(title, lIdx, rIdx) {
-        const jVal = document.getElementById(`j_${lIdx}_${rIdx}`).value;
-        const fVal = document.getElementById(`f_${lIdx}_${rIdx}`).value;
-        if (!jVal && !fVal) return;
+        const jEl = document.getElementById(`j_${lIdx}_${rIdx}`);
+        const fEl = document.getElementById(`f_${lIdx}_${rIdx}`);
+        if (!jEl.value && !fEl.value) return;
 
-        const jail = parseInt(jVal) || 0;
-        const fine = parseInt(fVal) || 0;
-        
-        const rowElement = document.getElementById(`j_${lIdx}_${rIdx}`).closest('.sub-row');
+        const jail = parseInt(jEl.value) || 0;
+        const fine = parseInt(fEl.value) || 0;
+        const rowElement = jEl.closest('.sub-row');
         const fullText = rowElement.querySelector('.sub-text').innerText;
-        
+
+        // --- HARD CHECK SAZBY ---
+        if (!jEl.readOnly && jEl.value) {
+            const rangeMatch = fullText.match(/sazba\s+(\d+)-(\d+)\s+let/i);
+            if (rangeMatch) {
+                const min = parseInt(rangeMatch[1]);
+                const max = parseInt(rangeMatch[2]);
+                
+                if (jail < min || jail > max) {
+                    showNotify(`STOP! Trest musí být v rozmezí ${min} až ${max} let.`);
+                    jEl.style.borderColor = "var(--danger)";
+                    return; // KONEC - nepřidá se nic
+                }
+            }
+        }
+        jEl.style.borderColor = "#333"; // Reset barvy pokud je to OK
+
         let licenses = [];
-        // Detekce klíčových slov v textu pro aktivaci varování
         if (fullText.toLowerCase().includes("zbrojní")) licenses.push("ZBROJNÍ PRŮKAZ");
         if (fullText.toLowerCase().includes("řidičský")) licenses.push("ŘIDIČSKÝ PRŮKAZ");
 
@@ -195,7 +217,6 @@
         protocolData.forEach((i, idx) => {
             tj += i.jail; tf += i.fine;
             i.licenses.forEach(l => allLicenses.add(l));
-
             let licenseAlerts = i.licenses.map(l => `<span class="case-alert">⚠ ZABAVIT ${l}</span>`).join("");
 
             cont.innerHTML += `
