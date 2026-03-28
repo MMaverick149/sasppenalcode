@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - Penal Code System</title>
+    <title>SASP MDT - TERMINÁL v92</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #14161a;
@@ -30,28 +30,53 @@
         .input-box { background: #000; border: 1px solid var(--border); color: #fff; padding: 8px; width: 85px; text-align: center; border-radius: 4px; font-weight: bold; outline: none; transition: 0.2s; }
         .input-jail { border-color: var(--jail); }
         .input-fine { border-color: var(--fine); }
-        .border-danger { border-color: var(--danger) !important; box-shadow: 0 0 10px rgba(255, 68, 68, 0.5); }
-
-        .input-box:disabled, .input-box[readonly] { 
-            border-color: var(--danger) !important; 
-            background: rgba(255, 68, 68, 0.1); 
-            cursor: not-allowed; 
-        }
 
         /* Protokol */
         .protocol-item { background: #000; padding: 15px; border-radius: 8px; border-left: 4px solid var(--jail); margin: 10px; position: relative; border: 1px solid var(--border); }
         .proto-inputs { display: flex; gap: 15px; margin-top: 10px; }
         
-        /* VELKÉ VAROVÁNÍ */
+        /* VAROVÁNÍ V PROTOKOLU - ČERVENÉ */
+        .lic-alert-item {
+            color: var(--danger);
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid var(--danger);
+            padding: 5px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 900;
+            margin-top: 10px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        /* PULZUJÍCÍ VAROVÁNÍ NAD CELKEM */
+        #licenseWarning {
+            background: var(--danger);
+            color: white;
+            padding: 12px;
+            border-radius: 4px;
+            font-weight: 900;
+            text-align: center;
+            margin: 10px;
+            display: none;
+            animation: pulse-red 0.8s infinite alternate;
+            box-shadow: 0 0 15px rgba(255, 68, 68, 0.6);
+            font-size: 14px;
+        }
+
+        @keyframes pulse-red {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0.7; transform: scale(1.02); }
+        }
+
+        /* VELKÉ VAROVÁNÍ PŘI PŘIDÁNÍ */
         #customAlert {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(255, 0, 0, 0.95); color: white; padding: 40px 80px;
             border-radius: 15px; font-size: 28px; font-weight: 900; z-index: 10000;
             display: none; text-align: center; border: 4px solid white;
-            animation: pulse 0.5s infinite alternate;
         }
 
-        @keyframes pulse { from { scale: 1; } to { scale: 1.05; } }
         .summary-box { padding: 20px; background: #000; border-top: 1px solid var(--border); }
     </style>
 </head>
@@ -71,7 +96,7 @@
     <div style="padding:20px; font-weight:800; color:var(--accent); border-bottom:1px solid var(--border);">AKTIVNÍ PROTOKOL PŘÍPADU</div>
     <div id="caseEntries" style="flex-grow:1; overflow-y:auto;"></div>
     
-    <div id="licenseWarning" style="background:var(--danger); color:white; padding:12px; border-radius:4px; font-weight:900; text-align:center; margin:10px; display:none;">⚠ ODEBRAT ZBROJNÍ PRŮKAZ</div>
+    <div id="licenseWarning">⚠️ ODEBRAT ZBROJNÍ PRŮKAZ ⚠️</div>
     
     <div class="summary-box">
         <div style="display:flex; justify-content:space-between; font-weight:900; margin-bottom:15px; font-size: 18px;">
@@ -158,15 +183,8 @@
         let jail = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
         let fine = parseInt(document.getElementById(`f_${lIdx}_${sIdx}`).value) || 0;
 
-        // --- BLOKACE PŘIDÁNÍ PŘI PŘEKROČENÍ ---
-        if (!sub.isFixJ && jail > sub.limitJ) {
-            showAlert(`NEPŘIDÁNO: Překročen limit let (Max ${sub.limitJ})!`);
-            return; // Ukončí funkci, položka se nepřidá
-        }
-        if (!sub.isFixF && sub.limitF > 0 && fine > sub.limitF) {
-            showAlert(`NEPŘIDÁNO: Překročen limit pokuty (Max $${sub.limitF.toLocaleString()})!`);
-            return; // Ukončí funkci, položka se nepřidá
-        }
+        if (!sub.isFixJ && jail > sub.limitJ) { showAlert(`NEPŘIDÁNO: Max ${sub.limitJ} let!`); return; }
+        if (!sub.isFixF && sub.limitF > 0 && fine > sub.limitF) { showAlert(`NEPŘIDÁNO: Max $${sub.limitF.toLocaleString()}!`); return; }
 
         protocol.push({
             id: Date.now(),
@@ -202,12 +220,14 @@
                             ${p.isFixF ? 'readonly' : ''} onchange="edit(${idx}, 'fine', this.value)">
                     </div>
                 </div>
-                ${p.lic ? '<div style="color:var(--danger); font-size:11px; font-weight:900; margin-top:10px;">⚠ ODEBRAT ZBROJNÍ PRŮKAZ</div>' : ''}
+                ${p.lic ? '<div class="lic-alert-item">⚠ ODEBRAT ZBROJNÍ PRŮKAZ</div>' : ''}
                 <button onclick="remove(${p.id})" style="position:absolute; right:12px; top:12px; background:none; border:none; color:var(--danger); cursor:pointer; font-size:18px; font-weight:bold;">✕</button>
             </div>
         `).join('');
 
+        // Zobrazení pulzujícího varování nad celkem
         document.getElementById('licenseWarning').style.display = protocol.some(p => p.lic) ? 'block' : 'none';
+        
         document.getElementById('sumJail').innerText = protocol.reduce((a, b) => a + b.jail, 0);
         document.getElementById('sumFine').innerText = protocol.reduce((a, b) => a + b.fine, 0).toLocaleString();
     }
@@ -215,18 +235,8 @@
     function edit(idx, type, val) {
         let v = parseInt(val) || 0;
         const p = protocol[idx];
-        
-        // Pokud někdo zkusí limit obejít úpravou přímo v protokolu, 
-        // hodnota se vrátí na maximum a zobrazí se varování.
-        if (type === 'jail' && !p.isFixJ && v > p.maxJ) {
-            showAlert(`LIMIT OMEZEN: Vráceno na max ${p.maxJ} let!`);
-            v = p.maxJ;
-        }
-        if (type === 'fine' && !p.isFixF && p.maxF > 0 && v > p.maxF) {
-            showAlert(`LIMIT OMEZEN: Vráceno na max $${p.maxF.toLocaleString()}!`);
-            v = p.maxF;
-        }
-        
+        if (type === 'jail' && !p.isFixJ && v > p.maxJ) v = p.maxJ;
+        if (type === 'fine' && !p.isFixF && p.maxF > 0 && v > p.maxF) v = p.maxF;
         protocol[idx][type] = v;
         updateProtocol();
     }
