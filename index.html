@@ -19,10 +19,10 @@
         .sub-text { flex: 1; font-size: 14px; color: #ccc; padding-right: 15px; }
         .input-group { display: flex; gap: 8px; }
         .input-box { background: #000; border: 1px solid #333; color: #fff; padding: 8px; width: 85px; text-align: center; border-radius: 4px; }
+        /* Styl pro zamknutá políčka */
+        .input-box[readonly] { border-color: #004400; color: #00ff88; cursor: not-allowed; background: #050505; }
         .btn-add { background: var(--accent); border: none; color: #000; padding: 8px 12px; font-weight: bold; cursor: pointer; border-radius: 4px; }
-        .case-entry { background: #111; padding: 12px; border-bottom: 1px solid #222; position: relative; margin-bottom: 5px; border-left: 2px solid var(--accent); }
         #notification { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #ff0000; color: white; padding: 30px 50px; border-radius: 15px; font-weight: bold; z-index: 99999; display: none; border: 5px solid white; text-transform: uppercase; font-size: 22px; text-align: center; box-shadow: 0 0 100px #000; }
-        #globalAlert { background: rgba(255, 68, 68, 0.2); border: 2px solid var(--danger); color: #fff; padding: 10px; margin-bottom: 15px; font-size: 13px; font-weight: bold; display: none; text-align: center; }
     </style>
 </head>
 <body>
@@ -37,7 +37,6 @@
 
 <div id="rightPanel">
     <div style="color:var(--accent); font-weight:bold; border-bottom:1px solid var(--accent); padding-bottom:10px; margin-bottom:15px;">AKTIVNÍ PROTOKOL</div>
-    <div id="globalAlert">⚠ ZABAVIT: <span id="alertList"></span></div>
     <div id="caseEntries" style="flex-grow:1; overflow-y:auto;"></div>
     <div style="border-top:2px solid var(--accent); padding-top:15px; margin-top:10px;">
         <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:16px; margin-bottom:8px;">Vězení: <span id="sumJail" style="color:var(--jail)">0 let</span></div>
@@ -67,14 +66,25 @@
             const title = item.getAttribute('data-title');
             let rows = "";
             item.querySelectorAll('.sub-line').forEach((line, rIdx) => {
+                const text = line.innerHTML;
+                const clean = text.replace(/(?<=\d)[\s.](?=\d)/g, '').replace(/[.$]/g, '');
+                
+                // Detekce pevných trestů (pokud chybí klíčová slova pro rozmezí)
+                const isRange = /od|do|až|sazba|rozmezí/i.test(text);
+                
                 const fF = line.getAttribute('data-fix-fine');
                 const fJ = line.getAttribute('data-fix-jail');
+                
+                // Pokud je v data-fix nastaveno, nebo pokud text není rozmezí a obsahuje jen jedno číslo
+                const isJailFixed = fJ !== null || (!isRange && (text.match(/\d+/g) || []).filter(n => n < 100).length === 1);
+                const isFineFixed = fF !== null || (!isRange && (clean.match(/\d+/g) || []).filter(n => n >= 100).length === 1);
+
                 rows += `
                     <div class="sub-row">
-                        <div class="sub-text">${line.innerHTML}</div>
+                        <div class="sub-text">${text}</div>
                         <div class="input-group">
-                            <input type="number" class="input-box" id="j_${lIdx}_${rIdx}" value="${fJ || ''}" placeholder="Let">
-                            <input type="number" class="input-box" id="f_${lIdx}_${rIdx}" value="${fF || ''}" placeholder="Suma $">
+                            <input type="number" class="input-box" id="j_${lIdx}_${rIdx}" value="${fJ || ''}" placeholder="Let" ${isJailFixed ? 'readonly' : ''}>
+                            <input type="number" class="input-box" id="f_${lIdx}_${rIdx}" value="${fF || ''}" placeholder="Suma $" ${isFineFixed ? 'readonly' : ''}>
                             <button class="btn-add" onclick="addItem('${title}', ${lIdx}, ${rIdx})">+</button>
                         </div>
                     </div>`;
@@ -93,43 +103,56 @@
         const userFine = parseInt(fEl.value) || 0;
         
         const rawText = jEl.closest('.sub-row').querySelector('.sub-text').innerText;
-        // Vyčištění textu pro analýzu: "2.000 $" -> "2000"
+        const isRange = /od|do|až|sazba|rozmezí/i.test(rawText);
         const cleanText = rawText.replace(/(?<=\d)[\s.](?=\d)/g, '').replace(/[.$]/g, '');
 
+        // --- KONTROLA VĚZENÍ ---
         if (userJail > 0) {
-            const jailPart = cleanText.split(/pokut/i)[0];
-            const nums = (jailPart.match(/\d+/g) || []).map(Number).filter(n => n < 100);
-            if (nums.length > 0) {
-                const min = nums.length >= 2 ? Math.min(...nums) : 1;
-                const max = Math.max(...nums);
-                if (userJail < min || userJail > max) { showNotify(`CHYBA: Vězení ${min}-${max} let!`); return; }
+            const jailNums = (cleanText.split(/pokut/i)[0].match(/\d+/g) || []).map(Number).filter(n => n < 100);
+            if (jailNums.length > 0) {
+                const min = (isRange && jailNums.length >= 2) ? Math.min(...jailNums) : (isRange ? 1 : Math.max(...jailNums));
+                const max = Math.max(...jailNums);
+                
+                if (!isRange && userJail !== max) {
+                    showNotify(`CHYBA: Tento trest je pevně daný (${max} let)!`);
+                    return;
+                }
+                if (isRange && (userJail < min || userJail > max)) {
+                    showNotify(`CHYBA: Rozmezí je ${min}-${max} let!`);
+                    return;
+                }
             }
         }
 
+        // --- KONTROLA POKUTY ---
         if (userFine > 0) {
             const finePart = cleanText.includes("pokut") ? cleanText.split(/pokut/i)[1] : cleanText;
-            const nums = (finePart.match(/\d+/g) || []).map(Number).filter(n => n >= 50);
-            if (nums.length > 0) {
-                const min = nums.length >= 2 ? Math.min(...nums) : 50;
-                const max = Math.max(...nums);
-                if (userFine < min || userFine > max) { showNotify(`CHYBA: Pokuta ${min}-${max}$!`); return; }
+            const fineNums = (finePart.match(/\d+/g) || []).map(Number).filter(n => n >= 50);
+            if (fineNums.length > 0) {
+                const min = (isRange && fineNums.length >= 2) ? Math.min(...fineNums) : (isRange ? 50 : Math.max(...fineNums));
+                const max = Math.max(...fineNums);
+
+                if (!isRange && userFine !== max) {
+                    showNotify(`CHYBA: Pevná pokuta je ${max.toLocaleString()}$!`);
+                    return;
+                }
+                if (isRange && (userFine < min || userFine > max)) {
+                    showNotify(`CHYBA: Rozmezí pokuty je ${min}-${max}$!`);
+                    return;
+                }
             }
         }
 
-        let lics = [];
-        if (rawText.toLowerCase().includes("zbrojní")) lics.push("ZBROJNÍ PRŮKAZ");
-        if (rawText.toLowerCase().includes("řidičský")) lics.push("ŘIDIČSKÝ PRŮKAZ");
-
-        protocolData.push({ title, jail: userJail, fine: userFine, lics, rawText });
+        protocolData.push({ title, jail: userJail, fine: userFine, rawText });
         render();
     }
 
     function render() {
         const cont = document.getElementById('caseEntries');
         cont.innerHTML = "";
-        let tj = 0, tf = 0; let allLics = new Set();
+        let tj = 0, tf = 0;
         protocolData.forEach((i, idx) => {
-            tj += i.jail; tf += i.fine; i.lics.forEach(l => allLics.add(l));
+            tj += i.jail; tf += i.fine;
             cont.innerHTML += `<div class="case-entry">
                 <button style="position:absolute; right:8px; top:8px; color:red; background:none; border:none; cursor:pointer;" onclick="removeItem(${idx})">×</button>
                 <div style="color:var(--accent); font-weight:bold; font-size:12px;">${i.title}</div>
@@ -139,9 +162,6 @@
         });
         document.getElementById('sumJail').innerText = tj + " let";
         document.getElementById('sumFine').innerText = tf.toLocaleString() + " $";
-        const ga = document.getElementById('globalAlert');
-        if (allLics.size > 0) { ga.style.display = "block"; document.getElementById('alertList').innerText = Array.from(allLics).join(" + "); }
-        else { ga.style.display = "none"; }
     }
 
     function removeItem(idx) { protocolData.splice(idx, 1); render(); }
