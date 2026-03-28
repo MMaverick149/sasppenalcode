@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP - Penal System</title>
+    <title>SASP - MDT Terminal v43</title>
     <style>
         :root {
             --bg-main: #0a0b0d;
@@ -66,9 +66,20 @@
         }
         .law-header { padding: 18px 25px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .law-title { font-weight: 700; color: var(--accent); text-transform: uppercase; font-size: 15px; }
+        
         .law-content { display: none; padding: 0 25px 20px 25px; background: rgba(0,0,0,0.2); }
         .law-card.active .law-content { display: block; }
         .law-card.active { border-color: var(--accent); }
+
+        /* VRÁCENÝ POPIS (DESCRIPTION) */
+        .law-description {
+            font-size: 13px;
+            color: #888;
+            padding: 10px 0 20px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            line-height: 1.5;
+            font-style: italic;
+        }
 
         .sub-row {
             display: flex; justify-content: space-between; align-items: center;
@@ -90,6 +101,7 @@
         .input-box.jail-input { border: 1px solid var(--jail-color); color: var(--jail-color); }
         .input-box.fine-input { border: 1px solid var(--fine-color); color: var(--fine-color); }
         
+        /* BLOKOVANÉ SAZBY ZELENÉ */
         .input-box[readonly] { 
             background: rgba(0, 255, 136, 0.05); border-color: var(--fine-color) !important; color: var(--fine-color) !important; cursor: not-allowed; 
         }
@@ -149,7 +161,7 @@
     <div class="welcome-card">
         <div style="font-size:60px; margin-bottom:15px;">🚔</div>
         <div class="welcome-title">SASP MDT</div>
-        <div style="color:var(--text-dim); margin-bottom:40px;">MOBILE DATA TERMINAL v42</div>
+        <div style="color:var(--text-dim); margin-bottom:40px;">MOBILE DATA TERMINAL v43</div>
         <button class="welcome-btn" onclick="document.getElementById('welcomeOverlay').style.display='none'">Vstoupit</button>
     </div>
 </div>
@@ -186,15 +198,13 @@
 <script>
     let protocolData = [];
 
-    // Pomocná funkce pro extrakci čísel za klíčovým slovem
+    // Funkce pro hledání limitů v textu za klíčovým slovem
     function getLimitsFor(text, keyword) {
         const lowerText = text.toLowerCase();
         const startIdx = lowerText.indexOf(keyword.toLowerCase());
         if (startIdx === -1) return [];
         
-        // Vezmeme text od klíčového slova dál
         const sub = text.substring(startIdx);
-        // Vyndáme čísla (ignorujeme tečky v tisících)
         const matches = sub.replace(/(?<=\d)\.(?=\d)/g, '').match(/\d+/g);
         return matches ? matches.map(Number) : [];
     }
@@ -209,7 +219,13 @@
         
         temp.querySelectorAll('.law-item').forEach((item, lIdx) => {
             const title = item.getAttribute('data-title');
-            let rows = "";
+            
+            // NAČTENÍ POPISU (p.law-description)
+            const descEl = item.querySelector('.law-description');
+            let descHtml = descEl ? `<div class="law-description">${descEl.innerHTML}</div>` : "";
+
+            let rows = descHtml; // Popis dáme na začátek obsahu karty
+
             item.querySelectorAll('.sub-line').forEach((line, rIdx) => {
                 const fixJail = line.getAttribute('data-fix-jail');
                 const fixFine = line.getAttribute('data-fix-fine');
@@ -234,9 +250,15 @@
                         </div>
                     </div>`;
             });
+
             const card = document.createElement('div');
             card.className = 'law-card';
-            card.innerHTML = `<div class="law-header" onclick="this.parentElement.classList.toggle('active')"><div class="law-title">${title}</div><div style="color:#444">▼</div></div><div class="law-content">${rows}</div>`;
+            card.innerHTML = `
+                <div class="law-header" onclick="this.parentElement.classList.toggle('active')">
+                    <div class="law-title">${title}</div>
+                    <div style="color:#444">▼</div>
+                </div>
+                <div class="law-content">${rows}</div>`;
             container.appendChild(card);
         });
     }
@@ -251,7 +273,6 @@
         const jEl = document.getElementById(`j_${lIdx}_${rIdx}`);
         const fEl = document.getElementById(`f_${lIdx}_${rIdx}`);
         
-        // Zákaz záporných čísel hned při vstupu
         const userJail = Math.max(0, parseInt(jEl.value) || 0);
         const userFine = Math.max(0, parseInt(fEl.value) || 0);
         
@@ -259,15 +280,12 @@
         const rawText = rowEl.querySelector('.sub-text').innerText;
         const formattedHtml = rowEl.querySelector('.sub-text').innerHTML;
 
-        // KONTROLA POKUTY (Hledáme za slovem "pokutou")
+        // Limity Pokuta
         if (!fEl.readOnly && userFine > 0) {
             const fineLimits = getLimitsFor(rawText, "pokutou");
             if (fineLimits.length > 0) {
-                // Pokud je tam "do 5.000", fineLimits bude [5000]. Min je pak 0.
-                // Pokud je tam "od 200 do 5.000", fineLimits bude [200, 5000].
                 const maxF = Math.max(...fineLimits);
                 const minF = fineLimits.length > 1 ? Math.min(...fineLimits) : 0;
-
                 if (userFine < minF || userFine > maxF) {
                     showNotify(`CHYBA: ${userFine.toLocaleString()}$ je mimo rozmezí (${minF}-${maxF}$)`);
                     return;
@@ -275,13 +293,12 @@
             }
         }
 
-        // KONTROLA VĚZENÍ (Hledáme za slovem "sazba" nebo "vězením")
+        // Limity Vězení
         if (!jEl.readOnly && userJail > 0) {
             const jailLimits = getLimitsFor(rawText, "sazba").concat(getLimitsFor(rawText, "vězením"));
             if (jailLimits.length > 0) {
                 const maxJ = Math.max(...jailLimits);
                 const minJ = jailLimits.length > 1 ? Math.min(...jailLimits) : 0;
-
                 if (userJail < minJ || userJail > maxJ) {
                     showNotify(`CHYBA: ${userJail} let je mimo rozmezí (${minJ}-${maxJ} let)`);
                     return;
@@ -326,7 +343,8 @@
         const cont = document.getElementById('caseEntries');
         cont.innerHTML = "";
         protocolData.forEach((i, idx) => {
-            cont.innerHTML += `<div style="background:#000; padding:15px; border-radius:8px; border-left:3px solid var(--jail-color); position:relative; margin-bottom:10px;">
+            cont.innerHTML += `
+            <div style="background:#000; padding:15px; border-radius:8px; border-left:3px solid var(--jail-color); position:relative; margin-bottom:10px;">
                 <button style="position:absolute; right:10px; top:10px; color:var(--danger); background:none; border:none; cursor:pointer; font-weight:bold;" onclick="removeItem(${idx})">×</button>
                 <div style="color:var(--accent); font-weight:800; font-size:11px; margin-bottom:5px;">${i.title}</div>
                 <div style="font-size:13px; color:#aaa; margin-bottom:10px;">${i.html}</div>
