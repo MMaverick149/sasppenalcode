@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - TERMINÁL v86</title>
+    <title>SASP MDT - TERMINÁL v88</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #14161a;
@@ -34,7 +34,7 @@
         .input-jail { border-color: var(--jail); }
         .input-fine { border-color: var(--fine); }
         
-        /* ČERVENÉ BLOKOVÁNÍ pro fixní ceny/roky */
+        /* ČERVENÉ BLOKOVÁNÍ (Fixní ceny/roky) */
         .input-box:disabled, .input-box[readonly] { 
             border-color: var(--danger) !important; 
             color: #fff !important; 
@@ -45,12 +45,10 @@
         .btn-add { background: var(--accent); border: none; padding: 8px 12px; border-radius: 4px; font-weight: 900; cursor: pointer; }
 
         /* Aktivní protokol položky */
-        .protocol-item { background: #000; padding: 15px; border-radius: 8px; border-left: 4px solid var(--jail); margin: 10px; position: relative; }
-        .proto-inputs { display: flex; gap: 10px; margin-top: 10px; }
+        .protocol-item { background: #000; padding: 15px; border-radius: 8px; border-left: 4px solid var(--jail); margin: 10px; position: relative; border-right: 1px solid var(--border); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        .proto-inputs { display: flex; gap: 15px; margin-top: 10px; }
         
-        /* Varování odebrat průkaz */
         #licenseWarning { background: var(--danger); color: white; padding: 12px; border-radius: 4px; font-weight: 900; text-align: center; margin: 10px; display: none; }
-
         .summary-box { padding: 20px; background: #000; border-top: 1px solid var(--border); }
     </style>
 </head>
@@ -83,6 +81,7 @@
     let laws = [];
     let protocol = [];
 
+    // Funkce pro načtení zákonů z tresty.html
     async function load() {
         try {
             const res = await fetch('tresty.html?v=' + Date.now());
@@ -99,16 +98,20 @@
                     const fixJ = line.getAttribute('data-fix-jail');
                     const fixF = line.getAttribute('data-fix-fine');
                     
-                    // Pomocná logika pro detekci limitů z textu (do X let / sazba X-Y let)
+                    // Extrakce limitů pro validaci překročení
                     const jailMatch = text.match(/sazba (\d+)-(\d+)|od (\d+) do (\d+)|sazba (\d+) let/i);
                     const fineMatch = text.match(/do ([\d.]+)\$|sazba ([\d.]+)\$|pokutou ([\d.]+)\$/i);
 
                     const maxJ = jailMatch ? (jailMatch[2] || jailMatch[4] || jailMatch[5]) : 99;
                     const maxF = fineMatch ? (fineMatch[1] || fineMatch[2] || fineMatch[3]).replace('.', '') : 0;
+                    
+                    // Detekce písmene podbodu (např. "e)")
+                    const letter = (text.match(/^[a-z]\)/i) || [""])[0];
 
                     return {
                         html: line.innerHTML.replace(/<b>/g, '<b class="bold-yellow">').replace(/<strong>/g, '<strong class="bold-yellow">'),
                         fullText: text,
+                        letter: letter,
                         valJ: fixJ || "",
                         valF: fixF || "",
                         isFixJ: fixJ !== null,
@@ -120,7 +123,7 @@
                 })
             }));
             render();
-        } catch (e) { console.error("Chyba při načítání:", e); }
+        } catch (e) { console.error("Chyba při načítání dat:", e); }
     }
 
     function render() {
@@ -153,17 +156,16 @@
         let jail = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
         let fine = parseInt(document.getElementById(`f_${lIdx}_${sIdx}`).value) || 0;
 
-        // Validace limitů z paragrafu
+        // Notifikace při překročení limitu (přidá se i tak)
         if (!sub.isFixJ && jail > sub.limitJ) {
-            alert(`⚠️ POZOR: Překračuješ povolenou sazbu ${sub.limitJ} let!`);
-        }
-        if (!sub.isFixF && fine > sub.limitF && sub.limitF > 0) {
-            alert(`⚠️ POZOR: Překračuješ povolenou pokutu $${sub.limitF.toLocaleString()}!`);
+            alert(`⚠️ POZOR: Překračuješ doporučenou sazbu ${sub.limitJ} let!`);
         }
 
         protocol.push({
             id: Date.now(),
             title: laws[lIdx].title,
+            letter: sub.letter,
+            fullText: sub.fullText,
             jail: jail,
             fine: fine,
             isFixJ: sub.isFixJ,
@@ -177,7 +179,14 @@
         const list = document.getElementById('caseEntries');
         list.innerHTML = protocol.map((p, idx) => `
             <div class="protocol-item">
-                <div style="color:var(--accent); font-weight:900; font-size:12px;">${p.title}</div>
+                <div style="color:var(--accent); font-weight:900; font-size:13px; margin-bottom: 5px;">
+                    ${p.title} <span style="color:#fff;">${p.letter}</span>
+                </div>
+                
+                <div style="font-size: 11px; color: #bbb; margin-bottom: 10px; line-height: 1.4;">
+                    ${p.fullText.replace(/([0-9]+ le[t|y])/g, '<b class="bold-yellow">$1</b>')}
+                </div>
+
                 <div class="proto-inputs">
                     <div>
                         <span style="font-size:10px; color:var(--jail)">LET</span><br>
@@ -190,7 +199,10 @@
                             ${p.isFixF ? 'readonly' : ''} onchange="edit(${idx}, 'fine', this.value)">
                     </div>
                 </div>
-                <button onclick="remove(${p.id})" style="position:absolute; right:10px; top:10px; background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">✕</button>
+                
+                ${p.lic ? '<div style="color:var(--danger); font-size:11px; font-weight:900; margin-top:10px;">⚠ ODEBRAT PRŮKAZ</div>' : ''}
+                
+                <button onclick="remove(${p.id})" style="position:absolute; right:12px; top:12px; background:none; border:none; color:var(--danger); cursor:pointer; font-size:18px; font-weight:bold;">✕</button>
             </div>
         `).join('');
 
