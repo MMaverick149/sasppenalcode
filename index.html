@@ -90,80 +90,97 @@
     function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
 
     async function load() {
-        const res = await fetch('tresty.html?v=' + Date.now());
-        const html = await res.text();
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        
-        laws = Array.from(doc.querySelectorAll('.law-item')).map(item => {
-            const title = item.getAttribute('data-title');
-            let subs = Array.from(item.querySelectorAll('.sub-line')).map(line => parseSub(line.innerText, line.innerHTML));
+    const res = await fetch('tresty.html?v=' + Date.now());
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    
+    laws = Array.from(doc.querySelectorAll('.law-item')).map(item => {
+        const title = item.getAttribute('data-title');
+        let subs = Array.from(item.querySelectorAll('.sub-line')).map(line => parseSub(line.innerText, line.innerHTML));
 
-            // OPRAVA §7 BOD (C) A (D)
-            if (title.includes('§7')) {
-                subs = subs.map(s => {
-                    // Bod C - fixace na 3-10 let
-                    if (s.text.toLowerCase().includes('c)')) {
-                        return parseSub(
-                            "c) úmyslně a zbraní střelnou sazba 3-10 let",
-                            "c) úmyslně a zbraní střelnou <b class='highlight'>sazba 3-10 let</b>"
-                        );
-                    }
-                    // Bod D - ponecháno v pořádku
-                    if (s.text.toLowerCase().includes('d)')) {
-                        return parseSub(
-                            "d) úmyslně a zbraní proti úřední osobě je trestný čin, který se trestá odnětím svobody od 5 let do 15 let. ODEBRAT Zbrojní Průkaz",
-                            "d) úmyslně a zbraní proti úřední osobě je trestný čin, který se trestá <b class='highlight'>odnětím svobody od 5 let do 15 let</b>. ODEBRAT Zbrojní Průkaz"
-                        );
-                    }
-                    return s;
-                });
-            }
-
-            // §11 ponecháno beze změn
-            if (title.includes('§11')) {
-                subs = [parseSub("Pokus o vraždu: Plánování či neúspěšně plánovaný a úmyslný pokus o usmrcení jiné osoby je trestný čin, který se trestá odnětím svobody od 25 let po doživotí. ODEBRAT Zbrojní Průkaz", "Plánování či neúspěšně plánovaný a úmyslný pokus o usmrcení jiné osoby je trestný čin, který se trestá <b class='highlight'>odnětím svobody od 25 let po doživotí</b>. ODEBRAT Zbrojní Průkaz")];
-            }
-            return { id: item.id || 'L' + Math.random().toString(36).substr(2, 5), title: title, subs: subs };
-        });
-        render();
-    }
-
-    function parseSub(raw, html) {
-        const txt = raw.toLowerCase();
-        // Detekce sazby X-Y
-        const dashMatch = txt.match(/sazba\s+(\d+)-(\d+)/i);
-        const rangeMatch = txt.match(/od\s+(\d+)\s+.*(?:do|až|po)\s+(\d+|doživotí)/i);
-        
-        let min = 0; let max = 999;
-        if (dashMatch) {
-            min = parseInt(dashMatch[1]);
-            max = parseInt(dashMatch[2]);
-        } else if (rangeMatch) {
-            min = parseInt(rangeMatch[1]);
-            max = rangeMatch[2].includes("doživotí") ? 99 : parseInt(rangeMatch[2]);
+        // OPRAVA §7 BOD (C) A (D)
+        if (title.includes('§7')) {
+            subs = subs.map(s => {
+                // Bod C - fixace na 3-10 let (přepsání, aby parseSub zachytil 'sazba 3-10')
+                if (s.text.toLowerCase().includes('c)')) {
+                    return parseSub(
+                        "c) úmyslně a zbraní střelnou sazba 3-10 let",
+                        "c) úmyslně a zbraní střelnou <b class='highlight'>sazba 3-10 let</b>"
+                    );
+                }
+                // Bod D - ponecháno 5-15 let
+                if (s.text.toLowerCase().includes('d)')) {
+                    return parseSub(
+                        "d) úmyslně a zbraní proti úřední osobě je trestný čin, který se trestá odnětím svobody od 5 let do 15 let. ODEBRAT Zbrojní Průkaz",
+                        "d) úmyslně a zbraní proti úřední osobě je trestný čin, který se trestá <b class='highlight'>odnětím svobody od 5 let do 15 let</b>. ODEBRAT Zbrojní Průkaz"
+                    );
+                }
+                return s;
+            });
         }
 
-        return { text: raw, html: html, hasJ: txt.includes("let") || txt.includes("doživotí") || txt.includes("sazba"), hasF: txt.includes("pokut") || txt.includes("$"), isLife: txt.includes("doživotí"), isZP: raw.includes("Zbrojní"), isRP: raw.includes("Řidičský"), minJ: min, maxJ: max };
+        // §11 - Doživotí / 25+
+        if (title.includes('§11')) {
+            subs = [parseSub("Pokus o vraždu: Plánování či neúspěšně plánovaný a úmyslný pokus o usmrcení jiné osoby je trestný čin, který se trestá odnětím svobody od 25 let po doživotí. ODEBRAT Zbrojní Průkaz", "Plánování či neúspěšně plánovaný a úmyslný pokus o usmrcení jiné osoby je trestný čin, který se trestá <b class='highlight'>odnětím svobody od 25 let po doživotí</b>. ODEBRAT Zbrojní Průkaz")];
+        }
+        return { id: item.id || 'L' + Math.random().toString(36).substr(2, 5), title: title, subs: subs };
+    });
+    render();
+}
+
+function parseSub(raw, html) {
+    const txt = raw.toLowerCase();
+    
+    // 1. Detekce formátu "sazba X-Y" (tvůj případ 3-10)
+    const dashMatch = txt.match(/sazba\s+(\d+)-(\d+)/i);
+    // 2. Detekce formátu "od X do Y" (klasické paragrafy)
+    const rangeMatch = txt.match(/od\s+(\d+)\s+.*(?:do|až|po)\s+(\d+|doživotí)/i);
+    
+    let min = 0; 
+    let max = 999;
+
+    if (dashMatch) {
+        min = parseInt(dashMatch[1]);
+        max = parseInt(dashMatch[2]);
+    } else if (rangeMatch) {
+        min = parseInt(rangeMatch[1]);
+        max = rangeMatch[2].includes("doživotí") ? 99 : parseInt(rangeMatch[2]);
     }
 
-    function render() {
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        document.getElementById('lawsContainer').innerHTML = laws.filter(l => l.title.toLowerCase().includes(search)).map((law, lIdx) => `
-            <div class="law-item" id="${law.id}">
-                <div class="law-category-header" onclick="toggleLaw(this)">${law.title}</div>
-                <div class="law-content">
-                    ${law.subs.map((sub, sIdx) => `
-                        <div class="row">
-                            <div class="law-description">${sub.html}</div>
-                            <input type="number" class="input-box" id="j_${lIdx}_${sIdx}" placeholder="皿" ${!sub.hasJ?'disabled':''}>
-                            <input type="number" class="input-box" id="f_${lIdx}_${sIdx}" placeholder="$" ${!sub.hasF?'disabled':''}>
-                            <button class="add-btn" onclick="checkAll(${lIdx}, ${sIdx})">+</button>
-                        </div>
-                    `).join('')}
-                </div>
+    return { 
+        text: raw, 
+        html: html, 
+        hasJ: txt.includes("let") || txt.includes("doživotí") || txt.includes("sazba"), 
+        hasF: txt.includes("pokut") || txt.includes("$"), 
+        isLife: txt.includes("doživotí"), 
+        isZP: raw.includes("Zbrojní"), 
+        isRP: raw.includes("Řidičský"), 
+        minJ: min, 
+        maxJ: max 
+    };
+}
+
+function render() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const container = document.getElementById('lawsContainer');
+    if (!container) return;
+
+    container.innerHTML = laws.filter(l => l.title.toLowerCase().includes(search)).map((law, lIdx) => `
+        <div class="law-item" id="${law.id}">
+            <div class="law-category-header" onclick="toggleLaw(this)">${law.title}</div>
+            <div class="law-content">
+                ${law.subs.map((sub, sIdx) => `
+                    <div class="row">
+                        <div class="law-description">${sub.html}</div>
+                        <input type="number" class="input-box" id="j_${lIdx}_${sIdx}" placeholder="皿" ${!sub.hasJ?'disabled':''}>
+                        <input type="number" class="input-box" id="f_${lIdx}_${sIdx}" placeholder="$" ${!sub.hasF?'disabled':''}>
+                        <button class="add-btn" onclick="checkAll(${lIdx}, ${sIdx})">+</button>
+                    </div>
+                `).join('')}
             </div>
-        `).join('');
-    }
+        </div>
+    `).join('');
+}
 
     function toggleLaw(el) { const c = el.nextElementSibling; c.style.display = (c.style.display === 'block') ? 'none' : 'block'; }
 
